@@ -1,13 +1,17 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Wallet, Plus, Lock } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
-import { Button } from '@/components/ui/button';
-import { LoadingSkeleton } from '@/components/common/LoadingSkeleton';
-import { StatusBadge } from '@/components/common/StatusBadge';
-import { formatCurrency } from '@/lib/format';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Wallet, Plus, Lock } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { LoadingSkeleton } from "@/components/common/LoadingSkeleton";
+import { StatusBadge } from "@/components/common/StatusBadge";
+import { SearchInput } from "@/components/common/SearchInput";
+import { TablePagination } from "@/components/common/TablePagination";
+import { formatCurrency } from "@/lib/format";
+import { useTableFilter } from "@/hooks/useTableFilter";
+import { usePagination } from "@/hooks/usePagination";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 import {
   Table,
   TableBody,
@@ -15,22 +19,23 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { CajaForm } from '@/components/forms/CajaForm';
-import { CierreCajaDialog } from '@/components/forms/CierreCajaDialog';
+} from "@/components/ui/table";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { CajaForm } from "@/components/forms/CajaForm";
+import { CierreCajaDialog } from "@/components/forms/CierreCajaDialog";
 
 export default function Cajas() {
   const [formOpen, setFormOpen] = useState(false);
   const [cierreOpen, setCierreOpen] = useState(false);
   const [selectedCaja, setSelectedCaja] = useState<any>(null);
   const { data: cajas, isLoading } = useQuery({
-    queryKey: ['cajas'],
+    queryKey: ["cajas"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('cajas')
-        .select(`
+        .from("cajas")
+        .select(
+          `
           *,
           sucursal:sucursales(
             codigo,
@@ -38,12 +43,31 @@ export default function Cajas() {
             empresa:empresas(razon_social, nombre_comercial)
           ),
           responsable:profiles(full_name)
-        `)
-        .order('created_at', { ascending: false });
+        `
+        )
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data;
     },
+  });
+
+  const { searchTerm, setSearchTerm, filteredData } = useTableFilter({
+    data: cajas || [],
+    searchFields: ["codigo", "nombre", "sucursal", "responsable"],
+  });
+
+  const {
+    currentPage,
+    pageSize,
+    totalPages,
+    totalItems,
+    paginatedData,
+    handlePageChange,
+    handlePageSizeChange,
+  } = usePagination({
+    data: filteredData,
+    initialPageSize: 10,
   });
 
   // Calcular totales
@@ -60,9 +84,7 @@ export default function Cajas() {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Cajas Chicas</h1>
-          <p className="text-muted-foreground mt-2">
-            Gestión de cajas chicas y fondos
-          </p>
+          <p className="text-muted-foreground mt-2">Gestión de cajas chicas y fondos</p>
         </div>
         <LoadingSkeleton type="table" count={5} />
       </div>
@@ -74,14 +96,14 @@ export default function Cajas() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Cajas Chicas</h1>
-          <p className="text-muted-foreground mt-2">
-            Gestión de cajas chicas y fondos
-          </p>
+          <p className="text-muted-foreground mt-2">Gestión de cajas chicas y fondos</p>
         </div>
-        <Button onClick={() => {
-          setSelectedCaja(null);
-          setFormOpen(true);
-        }}>
+        <Button
+          onClick={() => {
+            setSelectedCaja(null);
+            setFormOpen(true);
+          }}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Nueva Caja
         </Button>
@@ -115,10 +137,18 @@ export default function Cajas() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Cajas Chicas</CardTitle>
-          <CardDescription>
-            Total: {cajas?.length || 0} cajas registradas
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Lista de Cajas Chicas</CardTitle>
+              <CardDescription>Total: {cajas?.length || 0} cajas registradas</CardDescription>
+            </div>
+            <SearchInput
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder="Buscar por código, nombre..."
+              className="w-[300px]"
+            />
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
@@ -137,7 +167,7 @@ export default function Cajas() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {cajas?.map((caja) => {
+              {paginatedData?.map((caja) => {
                 const consumido = Number(caja.saldo_inicial) - Number(caja.saldo_actual);
                 const porcentajeConsumido = (consumido / Number(caja.saldo_inicial)) * 100;
 
@@ -149,18 +179,19 @@ export default function Cajas() {
                       <div>
                         <div className="font-medium">{caja.sucursal?.nombre}</div>
                         <div className="text-sm text-muted-foreground">
-                          {caja.sucursal?.empresa?.nombre_comercial || caja.sucursal?.empresa?.razon_social}
+                          {caja.sucursal?.empresa?.nombre_comercial ||
+                            caja.sucursal?.empresa?.razon_social}
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>{caja.responsable?.full_name || '-'}</TableCell>
+                    <TableCell>{caja.responsable?.full_name || "-"}</TableCell>
                     <TableCell>{formatCurrency(caja.saldo_inicial)}</TableCell>
                     <TableCell className="font-semibold">
                       {formatCurrency(caja.saldo_actual)}
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">
-                        <div className={porcentajeConsumido > 80 ? 'text-destructive' : ''}>
+                        <div className={porcentajeConsumido > 80 ? "text-destructive" : ""}>
                           {formatCurrency(consumido)}
                         </div>
                         <div className="text-xs text-muted-foreground">
@@ -169,18 +200,16 @@ export default function Cajas() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {caja.fecha_apertura ? (
-                        format(new Date(caja.fecha_apertura), 'dd/MM/yyyy', { locale: es })
-                      ) : (
-                        '-'
-                      )}
+                      {caja.fecha_apertura
+                        ? format(new Date(caja.fecha_apertura), "dd/MM/yyyy", { locale: es })
+                        : "-"}
                     </TableCell>
                     <TableCell>
                       <Badge
-                        variant={caja.estado === 'abierta' ? 'default' : 'secondary'}
-                        className={caja.estado === 'abierta' ? 'bg-green-100 text-green-800' : ''}
+                        variant={caja.estado === "abierta" ? "default" : "secondary"}
+                        className={caja.estado === "abierta" ? "bg-green-100 text-green-800" : ""}
                       >
-                        {caja.estado === 'abierta' ? 'Abierta' : 'Cerrada'}
+                        {caja.estado === "abierta" ? "Abierta" : "Cerrada"}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -192,11 +221,11 @@ export default function Cajas() {
                             setSelectedCaja(caja);
                             setFormOpen(true);
                           }}
-                          disabled={caja.estado === 'cerrada'}
+                          disabled={caja.estado === "cerrada"}
                         >
                           Editar
                         </Button>
-                        {caja.estado === 'abierta' && (
+                        {caja.estado === "abierta" && (
                           <Button
                             variant="outline"
                             size="sm"
@@ -216,6 +245,17 @@ export default function Cajas() {
               })}
             </TableBody>
           </Table>
+
+          {filteredData.length > 0 && (
+            <TablePagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              totalItems={totalItems}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+            />
+          )}
         </CardContent>
       </Card>
 

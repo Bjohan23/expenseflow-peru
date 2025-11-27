@@ -1,5 +1,14 @@
-import { Building2, LayoutDashboard, CreditCard, MapPin, DollarSign, FileText } from 'lucide-react';
-import { NavLink } from '@/components/NavLink';
+import {
+  Building2,
+  LayoutDashboard,
+  CreditCard,
+  MapPin,
+  DollarSign,
+  FileText,
+  Users,
+  UserCog,
+} from "lucide-react";
+import { NavLink } from "@/components/NavLink";
 import {
   Sidebar,
   SidebarContent,
@@ -10,22 +19,24 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from '@/components/ui/sidebar';
-import { useAuth } from '@/contexts/AuthContext';
+} from "@/components/ui/sidebar";
+import { useAuth } from "@/contexts/AuthContext";
 
 const menuItems = [
-  { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
-  { title: 'Empresas', url: '/empresas', icon: Building2 },
-  { title: 'Sucursales', url: '/sucursales', icon: MapPin },
-  { title: 'Centros de Costo', url: '/centros-costo', icon: CreditCard },
-  { title: 'Conceptos de Gasto', url: '/conceptos-gasto', icon: DollarSign },
-  { title: 'Cajas', url: '/cajas', icon: FileText },
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Empresas", url: "/empresas", icon: Building2 },
+  { title: "Sucursales", url: "/sucursales", icon: MapPin },
+  { title: "Centros de Costo", url: "/centros-costo", icon: CreditCard },
+  { title: "Conceptos de Gasto", url: "/conceptos-gasto", icon: DollarSign },
+  { title: "Cajas", url: "/cajas", icon: FileText },
+  { title: "Usuarios", url: "/usuarios", icon: UserCog },
+  { title: "Usuarios por Empresa", url: "/empresa-usuarios", icon: Users },
 ];
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const { profile } = useAuth();
-  const collapsed = state === 'collapsed';
+  const collapsed = state === "collapsed";
 
   return (
     <Sidebar collapsible="icon" className="border-r">
@@ -39,7 +50,7 @@ export function AppSidebar() {
               </div>
             )}
           </SidebarGroupLabel>
-          
+
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
@@ -73,9 +84,7 @@ export function AppSidebar() {
                   <p className="text-sm font-medium text-sidebar-foreground truncate">
                     {profile.full_name}
                   </p>
-                  <p className="text-xs text-sidebar-foreground/70 truncate">
-                    {profile.role}
-                  </p>
+                  <p className="text-xs text-sidebar-foreground/70 truncate">{profile.role}</p>
                 </div>
               </div>
             )}

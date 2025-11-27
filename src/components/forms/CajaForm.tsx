@@ -1,6 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -66,12 +67,24 @@ export function CajaForm({ open, onClose, caja }: CajaFormProps) {
   const form = useForm<CajaFormValues>({
     resolver: zodResolver(cajaSchema),
     defaultValues: {
-      codigo: caja?.codigo || '',
-      nombre: caja?.nombre || '',
-      sucursal_id: caja?.sucursal_id || '',
-      saldo_inicial: caja?.saldo_inicial?.toString() || '',
+      codigo: '',
+      nombre: '',
+      sucursal_id: '',
+      saldo_inicial: '',
     },
   });
+
+  // Actualizar form cuando cambia la caja
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        codigo: caja?.codigo || '',
+        nombre: caja?.nombre || '',
+        sucursal_id: caja?.sucursal_id || '',
+        saldo_inicial: caja?.saldo_inicial?.toString() || '',
+      });
+    }
+  }, [caja, open, form]);
 
   const mutation = useMutation({
     mutationFn: async (values: CajaFormValues) => {

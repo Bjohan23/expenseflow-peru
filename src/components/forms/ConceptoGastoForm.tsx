@@ -1,6 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
@@ -69,22 +70,37 @@ export function ConceptoGastoForm({ open, onClose, concepto }: ConceptoGastoForm
   const form = useForm<ConceptoGastoFormValues>({
     resolver: zodResolver(conceptoGastoSchema),
     defaultValues: {
-      codigo: concepto?.codigo || '',
-      nombre: concepto?.nombre || '',
-      descripcion: concepto?.descripcion || '',
-      categoria: concepto?.categoria || 'otros',
-      requiere_aprobacion: concepto?.requiere_aprobacion || false,
-      limite_maximo: concepto?.limite_maximo?.toString() || '',
-      centro_costo_id: concepto?.centro_costo_id || '',
+      codigo: '',
+      nombre: '',
+      descripcion: '',
+      categoria: 'otros',
+      requiere_aprobacion: false,
+      limite_maximo: '',
+      centro_costo_id: '',
     },
   });
+
+  // Actualizar form cuando cambia el concepto
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        codigo: concepto?.codigo || '',
+        nombre: concepto?.nombre || '',
+        descripcion: concepto?.descripcion || '',
+        categoria: concepto?.categoria || 'otros',
+        requiere_aprobacion: concepto?.requiere_aprobacion || false,
+        limite_maximo: concepto?.limite_maximo?.toString() || '',
+        centro_costo_id: concepto?.centro_costo_id || 'none',
+      });
+    }
+  }, [concepto, open, form]);
 
   const mutation = useMutation({
     mutationFn: async (values: ConceptoGastoFormValues) => {
       const data = {
         ...values,
         limite_maximo: values.limite_maximo ? parseFloat(values.limite_maximo) : null,
-        centro_costo_id: values.centro_costo_id || null,
+        centro_costo_id: values.centro_costo_id === 'none' || !values.centro_costo_id ? null : values.centro_costo_id,
         estado: 'activo',
       };
 
@@ -221,7 +237,7 @@ export function ConceptoGastoForm({ open, onClose, concepto }: ConceptoGastoForm
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Ninguno</SelectItem>
+                        <SelectItem value="none">Ninguno</SelectItem>
                         {centrosCosto?.map((cc) => (
                           <SelectItem key={cc.id} value={cc.id}>
                             {cc.codigo} - {cc.nombre}

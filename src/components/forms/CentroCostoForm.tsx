@@ -1,6 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -72,13 +73,26 @@ export function CentroCostoForm({ open, onClose, centroCosto }: CentroCostoFormP
   const form = useForm<CentroCostoFormValues>({
     resolver: zodResolver(centroCostoSchema),
     defaultValues: {
-      codigo: centroCosto?.codigo || '',
-      nombre: centroCosto?.nombre || '',
-      descripcion: centroCosto?.descripcion || '',
-      empresa_id: centroCosto?.empresa_id || '',
-      presupuesto_asignado: centroCosto?.presupuesto_asignado?.toString() || '',
+      codigo: '',
+      nombre: '',
+      descripcion: '',
+      empresa_id: '',
+      presupuesto_asignado: '',
     },
   });
+
+  // Actualizar form cuando cambia el centro de costo
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        codigo: centroCosto?.codigo || '',
+        nombre: centroCosto?.nombre || '',
+        descripcion: centroCosto?.descripcion || '',
+        empresa_id: centroCosto?.empresa_id || '',
+        presupuesto_asignado: centroCosto?.presupuesto_asignado?.toString() || '',
+      });
+    }
+  }, [centroCosto, open, form]);
 
   // Calcular métricas del presupuesto
   const presupuestoAsignadoValue = form.watch('presupuesto_asignado');

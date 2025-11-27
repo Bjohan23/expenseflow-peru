@@ -1,6 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
@@ -83,21 +84,38 @@ export function SucursalForm({ open, onClose, sucursal }: SucursalFormProps) {
   const form = useForm<SucursalFormValues>({
     resolver: zodResolver(sucursalSchema),
     defaultValues: {
-      codigo: sucursal?.codigo || '',
-      nombre: sucursal?.nombre || '',
-      empresa_id: sucursal?.empresa_id || '',
-      direccion: sucursal?.direccion || '',
-      ciudad: sucursal?.ciudad || '',
-      region: sucursal?.region || '',
-      telefono: sucursal?.telefono || '',
-      responsable_id: sucursal?.responsable_id || '',
+      codigo: '',
+      nombre: '',
+      empresa_id: '',
+      direccion: '',
+      ciudad: '',
+      region: '',
+      telefono: '',
+      responsable_id: '',
     },
   });
+
+  // Actualizar form cuando cambia la sucursal
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        codigo: sucursal?.codigo || '',
+        nombre: sucursal?.nombre || '',
+        empresa_id: sucursal?.empresa_id || '',
+        direccion: sucursal?.direccion || '',
+        ciudad: sucursal?.ciudad || '',
+        region: sucursal?.region || '',
+        telefono: sucursal?.telefono || '',
+        responsable_id: sucursal?.responsable_id || 'none',
+      });
+    }
+  }, [sucursal, open, form]);
 
   const mutation = useMutation({
     mutationFn: async (values: SucursalFormValues) => {
       const data = {
         ...values,
+        responsable_id: values.responsable_id === 'none' || !values.responsable_id ? null : values.responsable_id,
         estado: 'activa',
       };
 
@@ -274,7 +292,7 @@ export function SucursalForm({ open, onClose, sucursal }: SucursalFormProps) {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Sin responsable</SelectItem>
+                      <SelectItem value="none">Sin responsable</SelectItem>
                       {usuarios?.map((usuario) => (
                         <SelectItem key={usuario.id} value={usuario.id}>
                           {usuario.full_name} ({usuario.email})

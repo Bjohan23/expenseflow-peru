@@ -1,12 +1,16 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { CreditCard, Plus } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
-import { Button } from '@/components/ui/button';
-import { LoadingSkeleton } from '@/components/common/LoadingSkeleton';
-import { StatusBadge } from '@/components/common/StatusBadge';
-import { ProgressBar } from '@/components/common/ProgressBar';
-import { formatCurrency } from '@/lib/format';
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { CreditCard, Plus } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { LoadingSkeleton } from "@/components/common/LoadingSkeleton";
+import { StatusBadge } from "@/components/common/StatusBadge";
+import { ProgressBar } from "@/components/common/ProgressBar";
+import { SearchInput } from "@/components/common/SearchInput";
+import { TablePagination } from "@/components/common/TablePagination";
+import { formatCurrency } from "@/lib/format";
+import { useTableFilter } from "@/hooks/useTableFilter";
+import { usePagination } from "@/hooks/usePagination";
 import {
   Table,
   TableBody,
@@ -14,28 +18,48 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { CentroCostoForm } from '@/components/forms/CentroCostoForm';
+} from "@/components/ui/table";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CentroCostoForm } from "@/components/forms/CentroCostoForm";
 
 export default function CentrosCosto() {
   const [formOpen, setFormOpen] = useState(false);
   const [selectedCentroCosto, setSelectedCentroCosto] = useState<any>(null);
   const { data: centros, isLoading } = useQuery({
-    queryKey: ['centros-costo'],
+    queryKey: ["centros-costo"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('centros_costo')
-        .select(`
+        .from("centros_costo")
+        .select(
+          `
           *,
           empresa:empresas(razon_social, nombre_comercial),
           responsable:profiles(full_name)
-        `)
-        .order('created_at', { ascending: false });
+        `
+        )
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data;
     },
+  });
+
+  const { searchTerm, setSearchTerm, filteredData } = useTableFilter({
+    data: centros || [],
+    searchFields: ["codigo", "nombre", "descripcion", "empresa"],
+  });
+
+  const {
+    currentPage,
+    pageSize,
+    totalPages,
+    totalItems,
+    paginatedData,
+    handlePageChange,
+    handlePageSizeChange,
+  } = usePagination({
+    data: filteredData,
+    initialPageSize: 10,
   });
 
   if (isLoading) {
@@ -43,9 +67,7 @@ export default function CentrosCosto() {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Centros de Costo</h1>
-          <p className="text-muted-foreground mt-2">
-            Gestión de centros de costo y presupuestos
-          </p>
+          <p className="text-muted-foreground mt-2">Gestión de centros de costo y presupuestos</p>
         </div>
         <LoadingSkeleton type="table" count={5} />
       </div>
@@ -57,14 +79,14 @@ export default function CentrosCosto() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Centros de Costo</h1>
-          <p className="text-muted-foreground mt-2">
-            Gestión de centros de costo y presupuestos
-          </p>
+          <p className="text-muted-foreground mt-2">Gestión de centros de costo y presupuestos</p>
         </div>
-        <Button onClick={() => {
-          setSelectedCentroCosto(null);
-          setFormOpen(true);
-        }}>
+        <Button
+          onClick={() => {
+            setSelectedCentroCosto(null);
+            setFormOpen(true);
+          }}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Nuevo Centro de Costo
         </Button>
@@ -72,10 +94,20 @@ export default function CentrosCosto() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Centros de Costo</CardTitle>
-          <CardDescription>
-            Total: {centros?.length || 0} centros de costo registrados
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Lista de Centros de Costo</CardTitle>
+              <CardDescription>
+                Total: {centros?.length || 0} centros de costo registrados
+              </CardDescription>
+            </div>
+            <SearchInput
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder="Buscar por código, nombre..."
+              className="w-[300px]"
+            />
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
@@ -93,7 +125,7 @@ export default function CentrosCosto() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {centros?.map((centro) => {
+              {paginatedData?.map((centro) => {
                 const presupuesto = Number(centro.presupuesto_asignado);
                 const consumido = Number(centro.presupuesto_consumido);
                 const disponible = presupuesto - consumido;
@@ -111,9 +143,9 @@ export default function CentrosCosto() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {centro.empresa?.nombre_comercial || centro.empresa?.razon_social || '-'}
+                      {centro.empresa?.nombre_comercial || centro.empresa?.razon_social || "-"}
                     </TableCell>
-                    <TableCell>{centro.responsable?.full_name || '-'}</TableCell>
+                    <TableCell>{centro.responsable?.full_name || "-"}</TableCell>
                     <TableCell>{formatCurrency(presupuesto)}</TableCell>
                     <TableCell>
                       <div className="space-y-1">
@@ -121,7 +153,11 @@ export default function CentrosCosto() {
                         <ProgressBar value={porcentajeUsado} max={100} />
                       </div>
                     </TableCell>
-                    <TableCell className={disponible < presupuesto * 0.2 ? 'text-destructive font-semibold' : ''}>
+                    <TableCell
+                      className={
+                        disponible < presupuesto * 0.2 ? "text-destructive font-semibold" : ""
+                      }
+                    >
                       {formatCurrency(disponible)}
                     </TableCell>
                     <TableCell>
@@ -144,6 +180,17 @@ export default function CentrosCosto() {
               })}
             </TableBody>
           </Table>
+
+          {filteredData.length > 0 && (
+            <TablePagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              totalItems={totalItems}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+            />
+          )}
         </CardContent>
       </Card>
 

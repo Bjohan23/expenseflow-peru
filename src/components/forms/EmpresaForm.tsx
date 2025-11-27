@@ -1,9 +1,10 @@
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
-import { Button } from '@/components/ui/button';
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { useEffect } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +12,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -19,26 +20,28 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { toast } from 'sonner';
+} from "@/components/ui/select";
+import { toast } from "sonner";
+import { ImageUpload } from "@/components/common/ImageUpload";
 
 const empresaSchema = z.object({
-  ruc: z.string().min(11, 'El RUC debe tener 11 dígitos').max(11),
-  razon_social: z.string().min(1, 'La razón social es requerida'),
+  ruc: z.string().min(11, "El RUC debe tener 11 dígitos").max(11),
+  razon_social: z.string().min(1, "La razón social es requerida"),
   nombre_comercial: z.string().optional(),
   direccion: z.string().optional(),
   telefono: z.string().optional(),
-  email: z.string().email('Email inválido').optional().or(z.literal('')),
-  moneda: z.enum(['PEN', 'USD']),
+  email: z.string().email("Email inválido").optional().or(z.literal("")),
+  moneda: z.enum(["PEN", "USD"]),
   limite_gasto_mensual: z.string().optional(),
+  logo_url: z.string().optional(),
 });
 
 type EmpresaFormValues = z.infer<typeof empresaSchema>;
@@ -55,16 +58,34 @@ export function EmpresaForm({ open, onClose, empresa }: EmpresaFormProps) {
   const form = useForm<EmpresaFormValues>({
     resolver: zodResolver(empresaSchema),
     defaultValues: {
-      ruc: empresa?.ruc || '',
-      razon_social: empresa?.razon_social || '',
-      nombre_comercial: empresa?.nombre_comercial || '',
-      direccion: empresa?.direccion || '',
-      telefono: empresa?.telefono || '',
-      email: empresa?.email || '',
-      moneda: empresa?.moneda || 'PEN',
-      limite_gasto_mensual: empresa?.limite_gasto_mensual?.toString() || '',
+      ruc: "",
+      razon_social: "",
+      nombre_comercial: "",
+      direccion: "",
+      telefono: "",
+      email: "",
+      moneda: "PEN",
+      limite_gasto_mensual: "",
+      logo_url: "",
     },
   });
+
+  // Actualizar form cuando cambia la empresa
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        ruc: empresa?.ruc || "",
+        razon_social: empresa?.razon_social || "",
+        nombre_comercial: empresa?.nombre_comercial || "",
+        direccion: empresa?.direccion || "",
+        telefono: empresa?.telefono || "",
+        email: empresa?.email || "",
+        moneda: empresa?.moneda || "PEN",
+        limite_gasto_mensual: empresa?.limite_gasto_mensual?.toString() || "",
+        logo_url: empresa?.logo_url || "",
+      });
+    }
+  }, [empresa, open, form]);
 
   const mutation = useMutation({
     mutationFn: async (values: EmpresaFormValues) => {
@@ -73,30 +94,27 @@ export function EmpresaForm({ open, onClose, empresa }: EmpresaFormProps) {
         limite_gasto_mensual: values.limite_gasto_mensual
           ? parseFloat(values.limite_gasto_mensual)
           : null,
-        estado: 'activo',
+        estado: "activo",
       };
 
       if (empresa?.id) {
-        const { error } = await supabase
-          .from('empresas')
-          .update(data)
-          .eq('id', empresa.id);
+        const { error } = await supabase.from("empresas").update(data).eq("id", empresa.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('empresas').insert([data]);
+        const { error } = await supabase.from("empresas").insert([data]);
         if (error) throw error;
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['empresas'] });
+      queryClient.invalidateQueries({ queryKey: ["empresas"] });
       toast.success(
-        empresa?.id ? 'Empresa actualizada correctamente' : 'Empresa creada correctamente'
+        empresa?.id ? "Empresa actualizada correctamente" : "Empresa creada correctamente"
       );
       onClose();
       form.reset();
     },
     onError: (error: any) => {
-      toast.error('Error al guardar la empresa: ' + error.message);
+      toast.error("Error al guardar la empresa: " + error.message);
     },
   });
 
@@ -108,13 +126,11 @@ export function EmpresaForm({ open, onClose, empresa }: EmpresaFormProps) {
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>
-            {empresa?.id ? 'Editar Empresa' : 'Nueva Empresa'}
-          </DialogTitle>
+          <DialogTitle>{empresa?.id ? "Editar Empresa" : "Nueva Empresa"}</DialogTitle>
           <DialogDescription>
             {empresa?.id
-              ? 'Actualiza la información de la empresa'
-              : 'Completa los datos para registrar una nueva empresa'}
+              ? "Actualiza la información de la empresa"
+              : "Completa los datos para registrar una nueva empresa"}
           </DialogDescription>
         </DialogHeader>
 
@@ -141,7 +157,7 @@ export function EmpresaForm({ open, onClose, empresa }: EmpresaFormProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Moneda</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Seleccionar moneda" />
@@ -232,6 +248,27 @@ export function EmpresaForm({ open, onClose, empresa }: EmpresaFormProps) {
 
             <FormField
               control={form.control}
+              name="logo_url"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Logo de la Empresa (opcional)</FormLabel>
+                  <FormControl>
+                    <ImageUpload
+                      currentImageUrl={field.value}
+                      onImageUploaded={(url) => field.onChange(url)}
+                      onImageRemoved={() => field.onChange("")}
+                      bucket="company-logos"
+                      folder={empresa?.ruc || "temp"}
+                      maxSizeMB={5}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name="limite_gasto_mensual"
               render={({ field }) => (
                 <FormItem>
@@ -249,7 +286,7 @@ export function EmpresaForm({ open, onClose, empresa }: EmpresaFormProps) {
                 Cancelar
               </Button>
               <Button type="submit" disabled={mutation.isPending}>
-                {mutation.isPending ? 'Guardando...' : empresa?.id ? 'Actualizar' : 'Crear'}
+                {mutation.isPending ? "Guardando..." : empresa?.id ? "Actualizar" : "Crear"}
               </Button>
             </DialogFooter>
           </form>
