@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, FileText } from "lucide-react";
+import { ArrowLeft, FileText, ScanLine, FolderOpen } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -78,6 +78,19 @@ export default function ConceptoDocumentos() {
               Gestiona los documentos necesarios para este concepto
             </p>
           </div>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => navigate(`/conceptos-gasto/${id}/documentos/escaneados`)}
+          >
+            <FolderOpen className="h-4 w-4 mr-2" />
+            Ver Documentos Escaneados
+          </Button>
+          <Button onClick={() => navigate(`/conceptos-gasto/${id}/documentos/upload`)}>
+            <ScanLine className="h-4 w-4 mr-2" />
+            Escanear Documento
+          </Button>
         </div>
       </div>
 

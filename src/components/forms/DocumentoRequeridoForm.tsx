@@ -85,7 +85,10 @@ export function DocumentoRequeridoForm({
   const mutation = useMutation({
     mutationFn: async (values: DocumentoFormValues) => {
       const data = {
-        ...values,
+        nombre_documento: values.nombre_documento,
+        descripcion: values.descripcion || null,
+        tipo_documento: values.tipo_documento,
+        es_obligatorio: values.es_obligatorio,
         concepto_gasto_id: conceptoGastoId,
         orden: values.orden ? parseInt(values.orden) : 0,
         estado: "activo",
@@ -98,6 +101,7 @@ export function DocumentoRequeridoForm({
           .eq("id", documento.id);
         if (error) throw error;
       } else {
+        // NO enviar el campo 'id', Supabase lo genera automáticamente
         const { error } = await supabase.from("concepto_documentos_requeridos").insert([data]);
         if (error) throw error;
       }

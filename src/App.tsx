@@ -13,6 +13,8 @@ import Sucursales from "./pages/Sucursales";
 import CentrosCosto from "./pages/CentrosCosto";
 import ConceptosGasto from "./pages/ConceptosGasto";
 import ConceptoDocumentos from "./pages/ConceptoDocumentos";
+import OCRUploadPage from "./pages/OCRUploadPage";
+import GastosDocumentos from "./pages/GastosDocumentos";
 import Cajas from "./pages/Cajas";
 import EmpresaUsuarios from "./pages/EmpresaUsuarios";
 import Usuarios from "./pages/Usuarios";
@@ -39,6 +41,11 @@ const App = () => (
               <Route path="/centros-costo" element={<CentrosCosto />} />
               <Route path="/conceptos-gasto" element={<ConceptosGasto />} />
               <Route path="/conceptos-gasto/:id/documentos" element={<ConceptoDocumentos />} />
+              <Route
+                path="/conceptos-gasto/:id/documentos/escaneados"
+                element={<GastosDocumentos />}
+              />
+              <Route path="/conceptos-gasto/:id/documentos/upload" element={<OCRUploadPage />} />
               <Route path="/cajas" element={<Cajas />} />
               <Route path="/usuarios" element={<Usuarios />} />
               <Route path="/empresa-usuarios" element={<EmpresaUsuarios />} />
