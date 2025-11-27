@@ -8,6 +8,11 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
+import Empresas from "./pages/Empresas";
+import Sucursales from "./pages/Sucursales";
+import CentrosCosto from "./pages/CentrosCosto";
+import ConceptosGasto from "./pages/ConceptosGasto";
+import Cajas from "./pages/Cajas";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,11 +31,11 @@ const App = () => (
             
             <Route element={<DashboardLayout />}>
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/empresas" element={<Dashboard />} />
-              <Route path="/sucursales" element={<Dashboard />} />
-              <Route path="/centros-costo" element={<Dashboard />} />
-              <Route path="/conceptos-gasto" element={<Dashboard />} />
-              <Route path="/cajas" element={<Dashboard />} />
+              <Route path="/empresas" element={<Empresas />} />
+              <Route path="/sucursales" element={<Sucursales />} />
+              <Route path="/centros-costo" element={<CentrosCosto />} />
+              <Route path="/conceptos-gasto" element={<ConceptosGasto />} />
+              <Route path="/cajas" element={<Cajas />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
