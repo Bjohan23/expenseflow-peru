@@ -181,6 +181,53 @@ export type Database = {
           },
         ]
       }
+      concepto_documentos_requeridos: {
+        Row: {
+          concepto_gasto_id: string | null
+          created_at: string | null
+          descripcion: string | null
+          es_obligatorio: boolean | null
+          estado: string | null
+          id: string
+          nombre_documento: string
+          orden: number | null
+          tipo_documento: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          concepto_gasto_id?: string | null
+          created_at?: string | null
+          descripcion?: string | null
+          es_obligatorio?: boolean | null
+          estado?: string | null
+          id?: string
+          nombre_documento: string
+          orden?: number | null
+          tipo_documento?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          concepto_gasto_id?: string | null
+          created_at?: string | null
+          descripcion?: string | null
+          es_obligatorio?: boolean | null
+          estado?: string | null
+          id?: string
+          nombre_documento?: string
+          orden?: number | null
+          tipo_documento?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "concepto_documentos_requeridos_concepto_gasto_id_fkey"
+            columns: ["concepto_gasto_id"]
+            isOneToOne: false
+            referencedRelation: "conceptos_gasto"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conceptos_gasto: {
         Row: {
           categoria: string
@@ -321,6 +368,348 @@ export type Database = {
         }
         Relationships: []
       }
+      gastos: {
+        Row: {
+          aprobado_en: string | null
+          aprobado_por: string | null
+          beneficiario_documento: string | null
+          beneficiario_nombre: string | null
+          beneficiario_tipo: string | null
+          caja_id: string | null
+          centro_costo_id: string | null
+          codigo: string
+          concepto_gasto_id: string
+          created_at: string | null
+          descripcion: string
+          documento_id: string | null
+          estado: string
+          fecha_gasto: string
+          forma_pago: string | null
+          id: string
+          moneda: string
+          monto: number
+          motivo_rechazo: string | null
+          numero_operacion: string | null
+          observaciones: string | null
+          pagado_en: string | null
+          pagado_por: string | null
+          rechazado_en: string | null
+          rechazado_por: string | null
+          requiere_aprobacion: boolean | null
+          tags: string[] | null
+          tipo_cambio: number | null
+          updated_at: string | null
+          usuario_id: string
+        }
+        Insert: {
+          aprobado_en?: string | null
+          aprobado_por?: string | null
+          beneficiario_documento?: string | null
+          beneficiario_nombre?: string | null
+          beneficiario_tipo?: string | null
+          caja_id?: string | null
+          centro_costo_id?: string | null
+          codigo: string
+          concepto_gasto_id: string
+          created_at?: string | null
+          descripcion: string
+          documento_id?: string | null
+          estado?: string
+          fecha_gasto: string
+          forma_pago?: string | null
+          id?: string
+          moneda?: string
+          monto: number
+          motivo_rechazo?: string | null
+          numero_operacion?: string | null
+          observaciones?: string | null
+          pagado_en?: string | null
+          pagado_por?: string | null
+          rechazado_en?: string | null
+          rechazado_por?: string | null
+          requiere_aprobacion?: boolean | null
+          tags?: string[] | null
+          tipo_cambio?: number | null
+          updated_at?: string | null
+          usuario_id: string
+        }
+        Update: {
+          aprobado_en?: string | null
+          aprobado_por?: string | null
+          beneficiario_documento?: string | null
+          beneficiario_nombre?: string | null
+          beneficiario_tipo?: string | null
+          caja_id?: string | null
+          centro_costo_id?: string | null
+          codigo?: string
+          concepto_gasto_id?: string
+          created_at?: string | null
+          descripcion?: string
+          documento_id?: string | null
+          estado?: string
+          fecha_gasto?: string
+          forma_pago?: string | null
+          id?: string
+          moneda?: string
+          monto?: number
+          motivo_rechazo?: string | null
+          numero_operacion?: string | null
+          observaciones?: string | null
+          pagado_en?: string | null
+          pagado_por?: string | null
+          rechazado_en?: string | null
+          rechazado_por?: string | null
+          requiere_aprobacion?: boolean | null
+          tags?: string[] | null
+          tipo_cambio?: number | null
+          updated_at?: string | null
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gastos_caja_id_fkey"
+            columns: ["caja_id"]
+            isOneToOne: false
+            referencedRelation: "cajas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gastos_centro_costo_id_fkey"
+            columns: ["centro_costo_id"]
+            isOneToOne: false
+            referencedRelation: "centros_costo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gastos_concepto_gasto_id_fkey"
+            columns: ["concepto_gasto_id"]
+            isOneToOne: false
+            referencedRelation: "conceptos_gasto"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gastos_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "gastos_documentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gastos_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "vista_gastos_documentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gastos_documentos: {
+        Row: {
+          archivo_nombre: string
+          archivo_tamano: number
+          archivo_tipo: string
+          archivo_url: string
+          caja_id: string | null
+          cliente_direccion: string | null
+          cliente_documento: string | null
+          cliente_nombre: string | null
+          codigo_qr: string | null
+          concepto_gasto_id: string | null
+          condiciones_pago: string | null
+          confianza_ocr: number | null
+          created_at: string | null
+          descuento: number | null
+          detraccion: number | null
+          emisor_direccion: string | null
+          emisor_email: string | null
+          emisor_razon_social: string | null
+          emisor_ruc: string | null
+          emisor_telefono: string | null
+          estado: string | null
+          fecha_emision: string
+          fecha_vencimiento: string | null
+          forma_pago: string | null
+          glosa: string | null
+          hash_validacion: string | null
+          id: string
+          igv: number
+          items: Json | null
+          moneda: string
+          numero_documento: string
+          observaciones: string | null
+          procesado_por: string | null
+          requiere_validacion: boolean | null
+          subtotal: number
+          texto_raw: string | null
+          tipo_cambio: number | null
+          tipo_documento: string
+          total: number
+          updated_at: string | null
+          usuario_id: string | null
+          validado_en: string | null
+          validado_manualmente: boolean | null
+          validado_por: string | null
+          validado_sunat: boolean | null
+        }
+        Insert: {
+          archivo_nombre: string
+          archivo_tamano: number
+          archivo_tipo: string
+          archivo_url: string
+          caja_id?: string | null
+          cliente_direccion?: string | null
+          cliente_documento?: string | null
+          cliente_nombre?: string | null
+          codigo_qr?: string | null
+          concepto_gasto_id?: string | null
+          condiciones_pago?: string | null
+          confianza_ocr?: number | null
+          created_at?: string | null
+          descuento?: number | null
+          detraccion?: number | null
+          emisor_direccion?: string | null
+          emisor_email?: string | null
+          emisor_razon_social?: string | null
+          emisor_ruc?: string | null
+          emisor_telefono?: string | null
+          estado?: string | null
+          fecha_emision: string
+          fecha_vencimiento?: string | null
+          forma_pago?: string | null
+          glosa?: string | null
+          hash_validacion?: string | null
+          id?: string
+          igv?: number
+          items?: Json | null
+          moneda?: string
+          numero_documento: string
+          observaciones?: string | null
+          procesado_por?: string | null
+          requiere_validacion?: boolean | null
+          subtotal: number
+          texto_raw?: string | null
+          tipo_cambio?: number | null
+          tipo_documento: string
+          total: number
+          updated_at?: string | null
+          usuario_id?: string | null
+          validado_en?: string | null
+          validado_manualmente?: boolean | null
+          validado_por?: string | null
+          validado_sunat?: boolean | null
+        }
+        Update: {
+          archivo_nombre?: string
+          archivo_tamano?: number
+          archivo_tipo?: string
+          archivo_url?: string
+          caja_id?: string | null
+          cliente_direccion?: string | null
+          cliente_documento?: string | null
+          cliente_nombre?: string | null
+          codigo_qr?: string | null
+          concepto_gasto_id?: string | null
+          condiciones_pago?: string | null
+          confianza_ocr?: number | null
+          created_at?: string | null
+          descuento?: number | null
+          detraccion?: number | null
+          emisor_direccion?: string | null
+          emisor_email?: string | null
+          emisor_razon_social?: string | null
+          emisor_ruc?: string | null
+          emisor_telefono?: string | null
+          estado?: string | null
+          fecha_emision?: string
+          fecha_vencimiento?: string | null
+          forma_pago?: string | null
+          glosa?: string | null
+          hash_validacion?: string | null
+          id?: string
+          igv?: number
+          items?: Json | null
+          moneda?: string
+          numero_documento?: string
+          observaciones?: string | null
+          procesado_por?: string | null
+          requiere_validacion?: boolean | null
+          subtotal?: number
+          texto_raw?: string | null
+          tipo_cambio?: number | null
+          tipo_documento?: string
+          total?: number
+          updated_at?: string | null
+          usuario_id?: string | null
+          validado_en?: string | null
+          validado_manualmente?: boolean | null
+          validado_por?: string | null
+          validado_sunat?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gastos_documentos_caja_id_fkey"
+            columns: ["caja_id"]
+            isOneToOne: false
+            referencedRelation: "cajas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gastos_documentos_concepto_gasto_id_fkey"
+            columns: ["concepto_gasto_id"]
+            isOneToOne: false
+            referencedRelation: "conceptos_gasto"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gastos_historial: {
+        Row: {
+          accion: string
+          comentario: string | null
+          created_at: string | null
+          estado_anterior: string | null
+          estado_nuevo: string | null
+          gasto_id: string
+          id: string
+          usuario_id: string
+        }
+        Insert: {
+          accion: string
+          comentario?: string | null
+          created_at?: string | null
+          estado_anterior?: string | null
+          estado_nuevo?: string | null
+          gasto_id: string
+          id?: string
+          usuario_id: string
+        }
+        Update: {
+          accion?: string
+          comentario?: string | null
+          created_at?: string | null
+          estado_anterior?: string | null
+          estado_nuevo?: string | null
+          gasto_id?: string
+          id?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gastos_historial_gasto_id_fkey"
+            columns: ["gasto_id"]
+            isOneToOne: false
+            referencedRelation: "gastos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gastos_historial_gasto_id_fkey"
+            columns: ["gasto_id"]
+            isOneToOne: false
+            referencedRelation: "vista_gastos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -419,10 +808,196 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      vista_gastos: {
+        Row: {
+          aprobado_en: string | null
+          aprobado_por: string | null
+          aprobado_por_email: string | null
+          beneficiario_documento: string | null
+          beneficiario_nombre: string | null
+          beneficiario_tipo: string | null
+          caja_id: string | null
+          caja_nombre: string | null
+          centro_costo_id: string | null
+          centro_costo_nombre: string | null
+          codigo: string | null
+          concepto_categoria: string | null
+          concepto_gasto_id: string | null
+          concepto_limite: number | null
+          concepto_nombre: string | null
+          created_at: string | null
+          descripcion: string | null
+          dias_desde_gasto: number | null
+          documento_id: string | null
+          documento_numero: string | null
+          documento_tipo: string | null
+          documento_url: string | null
+          estado: string | null
+          excede_limite: boolean | null
+          fecha_gasto: string | null
+          forma_pago: string | null
+          id: string | null
+          moneda: string | null
+          monto: number | null
+          motivo_rechazo: string | null
+          numero_operacion: string | null
+          observaciones: string | null
+          pagado_en: string | null
+          pagado_por: string | null
+          pagado_por_email: string | null
+          rechazado_en: string | null
+          rechazado_por: string | null
+          requiere_aprobacion: boolean | null
+          tags: string[] | null
+          tipo_cambio: number | null
+          updated_at: string | null
+          usuario_email: string | null
+          usuario_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gastos_caja_id_fkey"
+            columns: ["caja_id"]
+            isOneToOne: false
+            referencedRelation: "cajas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gastos_centro_costo_id_fkey"
+            columns: ["centro_costo_id"]
+            isOneToOne: false
+            referencedRelation: "centros_costo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gastos_concepto_gasto_id_fkey"
+            columns: ["concepto_gasto_id"]
+            isOneToOne: false
+            referencedRelation: "conceptos_gasto"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gastos_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "gastos_documentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gastos_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "vista_gastos_documentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vista_gastos_documentos: {
+        Row: {
+          archivo_nombre: string | null
+          archivo_tamano: number | null
+          archivo_tipo: string | null
+          archivo_url: string | null
+          caja_id: string | null
+          caja_nombre: string | null
+          cliente_direccion: string | null
+          cliente_documento: string | null
+          cliente_nombre: string | null
+          codigo_qr: string | null
+          concepto_categoria: string | null
+          concepto_gasto_id: string | null
+          concepto_nombre: string | null
+          condiciones_pago: string | null
+          confianza_ocr: number | null
+          created_at: string | null
+          descuento: number | null
+          detraccion: number | null
+          dias_desde_emision: number | null
+          emisor_direccion: string | null
+          emisor_email: string | null
+          emisor_razon_social: string | null
+          emisor_ruc: string | null
+          emisor_telefono: string | null
+          esta_vencido: boolean | null
+          estado: string | null
+          fecha_emision: string | null
+          fecha_vencimiento: string | null
+          forma_pago: string | null
+          glosa: string | null
+          hash_validacion: string | null
+          id: string | null
+          igv: number | null
+          items: Json | null
+          moneda: string | null
+          numero_documento: string | null
+          observaciones: string | null
+          procesado_por: string | null
+          requiere_validacion: boolean | null
+          subtotal: number | null
+          texto_raw: string | null
+          tipo_cambio: number | null
+          tipo_documento: string | null
+          total: number | null
+          total_pen: number | null
+          updated_at: string | null
+          usuario_id: string | null
+          validado_en: string | null
+          validado_manualmente: boolean | null
+          validado_por: string | null
+          validado_sunat: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gastos_documentos_caja_id_fkey"
+            columns: ["caja_id"]
+            isOneToOne: false
+            referencedRelation: "cajas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gastos_documentos_concepto_gasto_id_fkey"
+            columns: ["concepto_gasto_id"]
+            isOneToOne: false
+            referencedRelation: "conceptos_gasto"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
-      [_ in never]: never
+      is_admin: { Args: never; Returns: boolean }
+      obtener_estadisticas_gastos: {
+        Args: {
+          p_fecha_desde?: string
+          p_fecha_hasta?: string
+          p_usuario_id?: string
+        }
+        Returns: {
+          gastos_aprobados: number
+          gastos_pagados: number
+          gastos_pendientes: number
+          gastos_rechazados: number
+          monto_aprobado_pen: number
+          monto_pendiente_pen: number
+          monto_total_pen: number
+          total_gastos: number
+        }[]
+      }
+      obtener_estadisticas_ocr: {
+        Args: {
+          p_fecha_desde?: string
+          p_fecha_hasta?: string
+          p_usuario_id?: string
+        }
+        Returns: {
+          confianza_promedio: number
+          documentos_pendientes: number
+          documentos_por_tipo: Json
+          documentos_validados: number
+          total_documentos: number
+          total_monto_pen: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
