@@ -24,9 +24,9 @@ export function DashboardLayout() {
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
         <AppSidebar />
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col overflow-hidden">
           <AppHeader />
-          <main className="flex-1 p-6 bg-muted/20">
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-gradient-to-br from-slate-50 via-purple-50/30 to-slate-50">
             <Outlet />
           </main>
         </div>

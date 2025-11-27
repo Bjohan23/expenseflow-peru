@@ -17,6 +17,23 @@ dist-ssr
 .env.local
 .env.*.local
 
+# Supabase
+.supabase/
+supabase/.temp/
+supabase/.branches/
+**/supabase/.temp
+**/supabase/.branches
+*.version
+*-version
+gotrue-version
+pooler-url
+postgres-version
+project-ref
+rest-version
+storage-migration
+storage-version
+cli-latest
+
 # Claude and AI tools
 .claude
 .cursor

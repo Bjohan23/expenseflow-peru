@@ -39,31 +39,42 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
 
   return (
-    <Sidebar collapsible="icon" className="border-r">
-      <SidebarContent className="bg-sidebar">
+    <Sidebar collapsible="icon" className="border-r bg-gradient-to-b from-purple-600 via-purple-700 to-purple-800">
+      <SidebarContent className="bg-transparent">
         <SidebarGroup>
-          <SidebarGroupLabel className="px-4 py-3">
-            {!collapsed && (
-              <div className="flex items-center gap-2">
-                <Building2 className="w-5 h-5" />
-                <span className="font-bold">Sistema de Gastos</span>
+          <SidebarGroupLabel className="px-4 py-6">
+            {!collapsed ? (
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-white/10 backdrop-blur-sm">
+                  <Building2 className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <span className="font-bold text-white text-base">ExpenseFlow</span>
+                  <p className="text-xs text-white/70 mt-0.5">Sistema de Gastos</p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex justify-center">
+                <div className="p-2 rounded-lg bg-white/10 backdrop-blur-sm">
+                  <Building2 className="w-5 h-5 text-white" />
+                </div>
               </div>
             )}
           </SidebarGroupLabel>
 
-          <SidebarGroupContent>
-            <SidebarMenu>
+          <SidebarGroupContent className="px-3">
+            <SidebarMenu className="space-y-1">
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink
                       to={item.url}
                       end
-                      className="flex items-center gap-3 px-4 py-2 text-sidebar-foreground hover:bg-sidebar-accent rounded-lg transition-colors"
-                      activeClassName="bg-sidebar-accent font-semibold"
+                      className="flex items-center gap-3 px-3 py-2.5 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200 group"
+                      activeClassName="bg-white/20 text-white font-semibold shadow-lg backdrop-blur-sm"
                     >
-                      <item.icon className="w-5 h-5" />
-                      {!collapsed && <span>{item.title}</span>}
+                      <item.icon className="w-5 h-5 transition-transform group-hover:scale-110" />
+                      {!collapsed && <span className="text-sm">{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -72,19 +83,25 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* User info at bottom */}
+        {/* User info at bottom with better design */}
         {profile && (
-          <div className="mt-auto p-4 border-t border-sidebar-border">
-            {!collapsed && (
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-sidebar-accent flex items-center justify-center text-sidebar-foreground font-semibold">
+          <div className="mt-auto p-4 border-t border-white/10">
+            {!collapsed ? (
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-white/10 backdrop-blur-sm hover:bg-white/15 transition-colors">
+                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-bold shadow-md">
                   {profile.full_name.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-sidebar-foreground truncate">
+                  <p className="text-sm font-semibold text-white truncate">
                     {profile.full_name}
                   </p>
-                  <p className="text-xs text-sidebar-foreground/70 truncate">{profile.role}</p>
+                  <p className="text-xs text-white/70 truncate capitalize">{profile.role}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex justify-center">
+                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-bold shadow-md">
+                  {profile.full_name.charAt(0).toUpperCase()}
                 </div>
               </div>
             )}

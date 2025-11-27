@@ -1,11 +1,32 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, FileText, Eye, Edit, Trash2, ScanLine } from "lucide-react";
+import { useState } from "react";
+import { ArrowLeft, FileText, Eye, Edit, Trash2, ScanLine, Search, Filter } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LoadingSkeleton } from "@/components/common/LoadingSkeleton";
+import { EditarDocumentoDialog } from "@/components/forms/EditarDocumentoDialog";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
 import {
   Table,
   TableBody,
@@ -39,6 +60,18 @@ interface GastoDocumento {
 export default function GastosDocumentos() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const [documentoAEditar, setDocumentoAEditar] = useState<GastoDocumento | null>(null);
+  const [dialogEditarOpen, setDialogEditarOpen] = useState(false);
+  const [documentoAEliminar, setDocumentoAEliminar] = useState<GastoDocumento | null>(null);
+  const [dialogEliminarOpen, setDialogEliminarOpen] = useState(false);
+
+  // Estados para filtros
+  const [busqueda, setBusqueda] = useState("");
+  const [filtroTipo, setFiltroTipo] = useState<string>("todos");
+  const [filtroEstado, setFiltroEstado] = useState<string>("todos");
 
   // Función para obtener URL firmada (signed URL) para archivos privados
   const obtenerUrlFirmada = async (path: string) => {
@@ -72,11 +105,7 @@ export default function GastosDocumentos() {
   });
 
   // Fetch documentos escaneados
-  const {
-    data: documentos,
-    isLoading,
-    refetch,
-  } = useQuery({
+  const { data: documentos, isLoading } = useQuery({
     queryKey: ["gastos-documentos", id],
     queryFn: async () => {
       if (!id) throw new Error("ID no proporcionado");
@@ -91,6 +120,65 @@ export default function GastosDocumentos() {
       return data as GastoDocumento[];
     },
     enabled: !!id,
+  });
+
+  // Mutación para eliminar documento
+  const eliminarMutation = useMutation({
+    mutationFn: async (documentoId: string) => {
+      // 1. Obtener documento para eliminar archivo de Storage
+      const { data: doc, error: fetchError } = await supabase
+        .from("gastos_documentos")
+        .select("archivo_url")
+        .eq("id", documentoId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // 2. Eliminar archivo de Storage
+      const { error: storageError } = await supabase.storage
+        .from("gastos-documentos")
+        .remove([doc.archivo_url]);
+
+      if (storageError) throw storageError;
+
+      // 3. Eliminar registro de base de datos
+      const { error: deleteError } = await supabase
+        .from("gastos_documentos")
+        .delete()
+        .eq("id", documentoId);
+
+      if (deleteError) throw deleteError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["gastos-documentos"] });
+      toast({
+        title: "✅ Documento eliminado",
+        description: "El documento ha sido eliminado correctamente",
+      });
+      setDialogEliminarOpen(false);
+      setDocumentoAEliminar(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "❌ Error al eliminar",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Filtrar documentos
+  const documentosFiltrados = documentos?.filter((doc) => {
+    const coincideBusqueda =
+      busqueda === "" ||
+      doc.numero_documento?.toLowerCase().includes(busqueda.toLowerCase()) ||
+      doc.emisor_razon_social?.toLowerCase().includes(busqueda.toLowerCase()) ||
+      doc.emisor_ruc?.includes(busqueda);
+
+    const coincideTipo = filtroTipo === "todos" || doc.tipo_documento === filtroTipo;
+    const coincideEstado = filtroEstado === "todos" || doc.estado === filtroEstado;
+
+    return coincideBusqueda && coincideTipo && coincideEstado;
   });
 
   if (isLoading) {
@@ -154,7 +242,7 @@ export default function GastosDocumentos() {
             <CardTitle className="text-sm font-medium">Total Documentos</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{documentos?.length || 0}</div>
+            <div className="text-2xl font-bold">{documentosFiltrados?.length || 0}</div>
           </CardContent>
         </Card>
         <Card>
@@ -163,7 +251,9 @@ export default function GastosDocumentos() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {formatCurrency(documentos?.reduce((acc, doc) => acc + (doc.total || 0), 0) || 0)}
+              {formatCurrency(
+                documentosFiltrados?.reduce((acc, doc) => acc + (doc.total || 0), 0) || 0
+              )}
             </div>
           </CardContent>
         </Card>
@@ -173,7 +263,7 @@ export default function GastosDocumentos() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-yellow-600">
-              {documentos?.filter((d) => d.estado === "pendiente").length || 0}
+              {documentosFiltrados?.filter((d) => d.estado === "pendiente").length || 0}
             </div>
           </CardContent>
         </Card>
@@ -183,11 +273,65 @@ export default function GastosDocumentos() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {documentos?.filter((d) => d.estado === "aprobado").length || 0}
+              {documentosFiltrados?.filter((d) => d.estado === "aprobado").length || 0}
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Filtros y Búsqueda */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-5 w-5" />
+            Filtros y Búsqueda
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Búsqueda */}
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por número, RUC o razón social..."
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            {/* Filtro por Tipo */}
+            <Select value={filtroTipo} onValueChange={setFiltroTipo}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filtrar por tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos los tipos</SelectItem>
+                <SelectItem value="factura">Factura</SelectItem>
+                <SelectItem value="boleta">Boleta</SelectItem>
+                <SelectItem value="recibo">Recibo</SelectItem>
+                <SelectItem value="ticket">Ticket</SelectItem>
+                <SelectItem value="comprobante">Comprobante</SelectItem>
+                <SelectItem value="otro">Otro</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Filtro por Estado */}
+            <Select value={filtroEstado} onValueChange={setFiltroEstado}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filtrar por estado" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos los estados</SelectItem>
+                <SelectItem value="pendiente">Pendiente</SelectItem>
+                <SelectItem value="aprobado">Aprobado</SelectItem>
+                <SelectItem value="rechazado">Rechazado</SelectItem>
+                <SelectItem value="revision">En Revisión</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Documentos Table */}
       <Card>
@@ -196,7 +340,7 @@ export default function GastosDocumentos() {
           <CardDescription>Todos los gastos escaneados con OCR para este concepto</CardDescription>
         </CardHeader>
         <CardContent>
-          {documentos && documentos.length > 0 ? (
+          {documentosFiltrados && documentosFiltrados.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -214,7 +358,7 @@ export default function GastosDocumentos() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {documentos.map((doc) => (
+                {documentosFiltrados.map((doc) => (
                   <TableRow key={doc.id}>
                     <TableCell>
                       <Badge className={getTipoDocColor(doc.tipo_documento)}>
@@ -275,7 +419,8 @@ export default function GastosDocumentos() {
                           variant="ghost"
                           size="icon"
                           onClick={() => {
-                            // TODO: Implementar edición
+                            setDocumentoAEditar(doc);
+                            setDialogEditarOpen(true);
                           }}
                           title="Editar"
                         >
@@ -286,7 +431,8 @@ export default function GastosDocumentos() {
                           size="icon"
                           className="text-red-600 hover:text-red-700"
                           onClick={() => {
-                            // TODO: Implementar eliminación
+                            setDocumentoAEliminar(doc);
+                            setDialogEliminarOpen(true);
                           }}
                           title="Eliminar"
                         >
@@ -316,6 +462,53 @@ export default function GastosDocumentos() {
           )}
         </CardContent>
       </Card>
+
+      {/* Dialog de Edición */}
+      <EditarDocumentoDialog
+        open={dialogEditarOpen}
+        onClose={() => {
+          setDialogEditarOpen(false);
+          setDocumentoAEditar(null);
+        }}
+        documento={documentoAEditar}
+      />
+
+      {/* Dialog de Confirmación de Eliminación */}
+      <AlertDialog open={dialogEliminarOpen} onOpenChange={setDialogEliminarOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar documento?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. El documento y el archivo se eliminarán
+              permanentemente del sistema.
+              {documentoAEliminar && (
+                <div className="mt-4 p-4 bg-muted rounded-md">
+                  <p className="font-medium">
+                    Tipo: {documentoAEliminar.tipo_documento.toUpperCase()}
+                  </p>
+                  <p>N°: {documentoAEliminar.numero_documento || "SIN-NUMERO"}</p>
+                  <p>Emisor: {documentoAEliminar.emisor_razon_social || "N/A"}</p>
+                  <p>Total: {formatCurrency(documentoAEliminar.total || 0)}</p>
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (documentoAEliminar) {
+                  eliminarMutation.mutate(documentoAEliminar.id);
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={eliminarMutation.isPending}
+            >
+              {eliminarMutation.isPending ? "Eliminando..." : "Eliminar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -29,27 +29,27 @@ export function AppHeader() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-16 items-center px-4 gap-4">
+      <div className="flex h-16 items-center px-2 sm:px-4 gap-2 sm:gap-4">
         <SidebarTrigger className="-ml-1" />
         
         <div className="flex-1" />
 
         {/* Notifications */}
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
+        <Button variant="ghost" size="icon" className="relative h-9 w-9">
+          <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
           <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-destructive" />
         </Button>
 
         {/* User Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="gap-2">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
+            <Button variant="ghost" className="gap-2 h-9 px-2 sm:px-3">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm">
                 {profile?.full_name.charAt(0).toUpperCase()}
               </div>
-              <div className="hidden md:block text-left">
-                <p className="text-sm font-medium">{profile?.full_name}</p>
-                <p className="text-xs text-muted-foreground capitalize">{profile?.role}</p>
+              <div className="hidden lg:block text-left">
+                <p className="text-sm font-medium leading-tight">{profile?.full_name}</p>
+                <p className="text-xs text-muted-foreground capitalize leading-tight">{profile?.role}</p>
               </div>
             </Button>
           </DropdownMenuTrigger>

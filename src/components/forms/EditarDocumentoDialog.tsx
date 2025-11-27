@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
@@ -32,6 +31,7 @@ interface GastoDocumento {
   tipo_documento: string;
   numero_documento: string | null;
   fecha_emision: string | null;
+  fecha_documento: string | null;
   emisor_ruc: string | null;
   emisor_razon_social: string | null;
   emisor_email: string | null;
@@ -44,6 +44,7 @@ interface GastoDocumento {
   estado: string;
   texto_raw: string | null;
   notas: string | null;
+  created_at: string;
 }
 
 interface EditarDocumentoDialogProps {
@@ -58,12 +59,12 @@ export function EditarDocumentoDialog({ open, onClose, documento }: EditarDocume
   const [formData, setFormData] = useState<Partial<GastoDocumento>>({});
 
   // Sincronizar formData cuando cambia el documento
-  useState(() => {
+  useEffect(() => {
     if (documento) {
       setFormData({
         tipo_documento: documento.tipo_documento,
         numero_documento: documento.numero_documento || "",
-        fecha_emision: documento.fecha_emision || "",
+        fecha_emision: documento.fecha_emision || documento.fecha_documento || "",
         emisor_ruc: documento.emisor_ruc || "",
         emisor_razon_social: documento.emisor_razon_social || "",
         emisor_email: documento.emisor_email || "",
@@ -76,7 +77,7 @@ export function EditarDocumentoDialog({ open, onClose, documento }: EditarDocume
         notas: documento.notas || "",
       });
     }
-  });
+  }, [documento]);
 
   const mutation = useMutation({
     mutationFn: async (data: Partial<GastoDocumento>) => {
@@ -264,7 +265,9 @@ export function EditarDocumentoDialog({ open, onClose, documento }: EditarDocume
                 type="number"
                 step="0.01"
                 value={formData.subtotal || 0}
-                onChange={(e) => setFormData({ ...formData, subtotal: parseFloat(e.target.value) })}
+                onChange={(e) =>
+                  setFormData({ ...formData, subtotal: Number.parseFloat(e.target.value) })
+                }
               />
             </div>
 
@@ -275,7 +278,9 @@ export function EditarDocumentoDialog({ open, onClose, documento }: EditarDocume
                 type="number"
                 step="0.01"
                 value={formData.igv || 0}
-                onChange={(e) => setFormData({ ...formData, igv: parseFloat(e.target.value) })}
+                onChange={(e) =>
+                  setFormData({ ...formData, igv: Number.parseFloat(e.target.value) })
+                }
               />
             </div>
 
@@ -286,7 +291,9 @@ export function EditarDocumentoDialog({ open, onClose, documento }: EditarDocume
                 type="number"
                 step="0.01"
                 value={formData.total || 0}
-                onChange={(e) => setFormData({ ...formData, total: parseFloat(e.target.value) })}
+                onChange={(e) =>
+                  setFormData({ ...formData, total: Number.parseFloat(e.target.value) })
+                }
               />
             </div>
           </div>
