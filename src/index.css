@@ -8,89 +8,130 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Fondo y textos principales */
+    --background: 0 0% 99%;
+    --foreground: 270 7% 13%;
 
+    /* Cards y contenedores */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 270 7% 13%;
 
+    /* Popovers y dropdowns */
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 270 7% 13%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Morado primario - Brand color */
+    --primary: 271 81% 56%;  /* #8B5CF6 - Morado vibrante */
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 271 81% 50%;
+    --primary-light: 271 81% 96%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Secundario - Azul complementario */
+    --secondary: 217 91% 60%;  /* #3B82F6 - Azul */
+    --secondary-foreground: 0 0% 100%;
+    --secondary-light: 217 91% 95%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Success - Verde */
+    --success: 142 76% 36%;  /* #10B981 */
+    --success-foreground: 0 0% 100%;
+    --success-light: 142 76% 95%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Warning - Amarillo/Naranja */
+    --warning: 38 92% 50%;  /* #F59E0B */
+    --warning-foreground: 0 0% 100%;
+    --warning-light: 38 92% 95%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Destructive - Rojo */
+    --destructive: 0 84% 60%;  /* #EF4444 */
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* Muted - Tonos grises */
+    --muted: 270 7% 96%;
+    --muted-foreground: 270 4% 46%;
 
-    --radius: 0.5rem;
+    /* Accent - Variante de primary */
+    --accent: 271 81% 96%;
+    --accent-foreground: 271 81% 46%;
 
-    --sidebar-background: 0 0% 98%;
+    /* Bordes e inputs */
+    --border: 270 7% 91%;
+    --input: 270 7% 91%;
+    --ring: 271 81% 56%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    /* Radius - Bordes redondeados */
+    --radius: 0.75rem;
 
-    --sidebar-primary: 240 5.9% 10%;
+    /* Sidebar */
+    --sidebar-background: 271 81% 56%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 271 81% 65%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 271 81% 50%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 271 81% 50%;
+    --sidebar-ring: 271 81% 65%;
 
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(271 81% 56%) 0%, hsl(271 81% 46%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(217 91% 50%) 100%);
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    --shadow-primary: 0 10px 30px -10px hsl(271 81% 56% / 0.3);
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 270 7% 7%;
+    --foreground: 0 0% 98%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 270 7% 10%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 270 7% 10%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 271 81% 56%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 271 81% 50%;
+    --primary-light: 271 81% 16%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 217 91% 60%;
+    --secondary-foreground: 0 0% 100%;
+    --secondary-light: 217 91% 15%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --success-light: 142 76% 15%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --warning-light: 38 92% 15%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --muted: 270 7% 15%;
+    --muted-foreground: 270 4% 60%;
+
+    --accent: 270 7% 15%;
+    --accent-foreground: 271 81% 56%;
+
+    --border: 270 7% 20%;
+    --input: 270 7% 20%;
+    --ring: 271 81% 56%;
+
+    --sidebar-background: 270 7% 10%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 271 81% 56%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 270 7% 15%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 270 7% 20%;
+    --sidebar-ring: 271 81% 56%;
+
+    --shadow-primary: 0 10px 30px -10px hsl(271 81% 56% / 0.5);
   }
 }
 
@@ -100,6 +141,28 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+}
+
+@layer utilities {
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
+
+  .gradient-secondary {
+    background: var(--gradient-secondary);
+  }
+
+  .shadow-primary {
+    box-shadow: var(--shadow-primary);
+  }
+
+  .text-balance {
+    text-wrap: balance;
   }
 }
