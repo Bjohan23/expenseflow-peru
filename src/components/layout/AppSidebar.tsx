@@ -39,7 +39,10 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
 
   return (
-    <Sidebar collapsible="icon" className="border-r bg-gradient-to-b from-purple-600 via-purple-700 to-purple-800">
+    <Sidebar
+      collapsible="icon"
+      className="border-r bg-gradient-to-b from-purple-600 via-purple-700 to-purple-800"
+    >
       <SidebarContent className="bg-transparent">
         <SidebarGroup>
           <SidebarGroupLabel className="px-4 py-6">
@@ -92,9 +95,7 @@ export function AppSidebar() {
                   {profile.full_name.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-white truncate">
-                    {profile.full_name}
-                  </p>
+                  <p className="text-sm font-semibold text-white truncate">{profile.full_name}</p>
                   <p className="text-xs text-white/70 truncate capitalize">{profile.role}</p>
                 </div>
               </div>

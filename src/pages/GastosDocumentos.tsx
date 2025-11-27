@@ -46,14 +46,18 @@ interface GastoDocumento {
   tipo_documento: string;
   numero_documento: string | null;
   fecha_documento: string | null;
+  fecha_emision: string | null;
   emisor_ruc: string | null;
   emisor_razon_social: string | null;
+  emisor_email: string | null;
+  emisor_telefono: string | null;
   subtotal: number | null;
   igv: number | null;
   total: number | null;
   moneda: string;
   confianza_ocr: number | null;
   estado: string;
+  observaciones: string | null;
   created_at: string;
 }
 
@@ -367,7 +371,9 @@ export default function GastosDocumentos() {
                     </TableCell>
                     <TableCell className="font-medium">{doc.numero_documento || "N/A"}</TableCell>
                     <TableCell>
-                      {doc.fecha_documento
+                      {doc.fecha_emision
+                        ? formatDate(new Date(doc.fecha_emision), "dd/MM/yyyy", { locale: es })
+                        : doc.fecha_documento
                         ? formatDate(new Date(doc.fecha_documento), "dd/MM/yyyy", { locale: es })
                         : "N/A"}
                     </TableCell>

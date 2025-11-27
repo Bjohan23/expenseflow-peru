@@ -1,9 +1,9 @@
-import { Navigate, Outlet } from 'react-router-dom';
-import { SidebarProvider } from '@/components/ui/sidebar';
-import { AppSidebar } from './AppSidebar';
-import { AppHeader } from './AppHeader';
-import { useAuth } from '@/contexts/AuthContext';
-import { Loader2 } from 'lucide-react';
+import { Navigate, Outlet } from "react-router-dom";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { AppSidebar } from "./AppSidebar";
+import { AppHeader } from "./AppHeader";
+import { useAuth } from "@/contexts/AuthContext";
+import { Loader2 } from "lucide-react";
 
 export function DashboardLayout() {
   const { user, loading } = useAuth();

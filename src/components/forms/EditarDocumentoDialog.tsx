@@ -43,7 +43,7 @@ interface GastoDocumento {
   confianza_ocr: number | null;
   estado: string;
   texto_raw: string | null;
-  notas: string | null;
+  observaciones: string | null;
   created_at: string;
 }
 
@@ -74,7 +74,7 @@ export function EditarDocumentoDialog({ open, onClose, documento }: EditarDocume
         total: documento.total || 0,
         moneda: documento.moneda,
         estado: documento.estado,
-        notas: documento.notas || "",
+        observaciones: (documento as any).observaciones || "",
       });
     }
   }, [documento]);
@@ -83,9 +83,22 @@ export function EditarDocumentoDialog({ open, onClose, documento }: EditarDocume
     mutationFn: async (data: Partial<GastoDocumento>) => {
       if (!documento?.id) throw new Error("ID de documento no proporcionado");
 
+      // Eliminar campos que no deben actualizarse
+      const {
+        id,
+        created_at,
+        archivo_url,
+        archivo_nombre,
+        archivo_tipo,
+        archivo_tamano,
+        texto_raw,
+        confianza_ocr,
+        ...updateData
+      } = data as any;
+
       const { error } = await supabase
         .from("gastos_documentos")
-        .update(data)
+        .update(updateData)
         .eq("id", documento.id);
 
       if (error) throw error;
@@ -298,14 +311,14 @@ export function EditarDocumentoDialog({ open, onClose, documento }: EditarDocume
             </div>
           </div>
 
-          {/* Notas */}
+          {/* Observaciones */}
           <div className="space-y-2">
-            <Label htmlFor="notas">Notas</Label>
+            <Label htmlFor="observaciones">Observaciones</Label>
             <Textarea
-              id="notas"
-              value={formData.notas || ""}
-              onChange={(e) => setFormData({ ...formData, notas: e.target.value })}
-              placeholder="Agregar notas o comentarios..."
+              id="observaciones"
+              value={(formData as any).observaciones || ""}
+              onChange={(e) => setFormData({ ...formData, observaciones: e.target.value } as any)}
+              placeholder="Agregar observaciones o comentarios..."
               rows={3}
             />
           </div>
