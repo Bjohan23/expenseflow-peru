@@ -24,6 +24,14 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -44,9 +52,10 @@ import {
   useRechazarGasto,
   useAnularGasto,
   useActualizarGasto,
+  useRegistrarPago,
 } from "@/hooks/useGastos";
 import { ESTADOS_GASTO, formatearMonto } from "@/types/gastos";
-import type { EstadoGasto, FormularioGasto, Moneda } from "@/types/gastos";
+import type { EstadoGasto, FormularioGasto, Moneda, FormaPago } from "@/types/gastos";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -60,10 +69,14 @@ export default function GastoDetalle() {
   const [modalRechazar, setModalRechazar] = useState(false);
   const [modalAnular, setModalAnular] = useState(false);
   const [dialogEnviar, setDialogEnviar] = useState(false);
+  const [modalPago, setModalPago] = useState(false);
 
   const [observaciones, setObservaciones] = useState("");
   const [motivoRechazo, setMotivoRechazo] = useState("");
   const [motivoAnular, setMotivoAnular] = useState("");
+  const [formaPago, setFormaPago] = useState<FormaPago>("efectivo");
+  const [numeroOperacion, setNumeroOperacion] = useState("");
+  const [observacionesPago, setObservacionesPago] = useState("");
 
   // Queries y mutations
   const { data: gasto, isLoading, error } = useGasto(id!);
@@ -74,6 +87,7 @@ export default function GastoDetalle() {
   const rechazarGasto = useRechazarGasto();
   const anularGasto = useAnularGasto();
   const actualizarGasto = useActualizarGasto();
+  const registrarPago = useRegistrarPago();
 
   // Handlers
   const handleEnviar = async () => {
@@ -118,6 +132,19 @@ export default function GastoDetalle() {
       datos,
     });
     setModalEditar(false);
+  };
+
+  const handleRegistrarPago = async () => {
+    await registrarPago.mutateAsync({
+      gasto_id: id!,
+      forma_pago: formaPago,
+      numero_operacion: numeroOperacion || undefined,
+      observaciones: observacionesPago || undefined,
+    });
+    setModalPago(false);
+    setFormaPago("efectivo");
+    setNumeroOperacion("");
+    setObservacionesPago("");
   };
 
   if (isLoading) {
@@ -382,7 +409,7 @@ export default function GastoDetalle() {
               )}
 
               {gasto.estado === "aprobado" && (
-                <Button className="w-full" variant="default">
+                <Button className="w-full" variant="default" onClick={() => setModalPago(true)}>
                   <DollarSign className="h-4 w-4 mr-2" />
                   Registrar Pago
                 </Button>
@@ -577,6 +604,68 @@ export default function GastoDetalle() {
                 disabled={anularGasto.isPending || !motivoAnular.trim()}
               >
                 {anularGasto.isPending ? "Anulando..." : "Anular Gasto"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Registrar Pago */}
+      <Dialog open={modalPago} onOpenChange={setModalPago}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Registrar Pago</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="forma-pago">
+                Forma de Pago <span className="text-red-500">*</span>
+              </Label>
+              <Select value={formaPago} onValueChange={(value) => setFormaPago(value as FormaPago)}>
+                <SelectTrigger id="forma-pago">
+                  <SelectValue placeholder="Seleccionar forma de pago" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="efectivo">Efectivo</SelectItem>
+                  <SelectItem value="tarjeta">Tarjeta</SelectItem>
+                  <SelectItem value="transferencia">Transferencia</SelectItem>
+                  <SelectItem value="cheque">Cheque</SelectItem>
+                  <SelectItem value="otro">Otro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {(formaPago === "transferencia" ||
+              formaPago === "cheque" ||
+              formaPago === "tarjeta") && (
+              <div>
+                <Label htmlFor="numero-operacion">Número de Operación / Cheque</Label>
+                <Input
+                  id="numero-operacion"
+                  value={numeroOperacion}
+                  onChange={(e) => setNumeroOperacion(e.target.value)}
+                  placeholder="Ingrese el número de operación o cheque"
+                />
+              </div>
+            )}
+
+            <div>
+              <Label htmlFor="observaciones-pago">Observaciones (opcional)</Label>
+              <Textarea
+                id="observaciones-pago"
+                value={observacionesPago}
+                onChange={(e) => setObservacionesPago(e.target.value)}
+                placeholder="Agregar comentarios sobre el pago..."
+                rows={3}
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setModalPago(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleRegistrarPago} disabled={registrarPago.isPending}>
+                {registrarPago.isPending ? "Registrando..." : "Registrar Pago"}
               </Button>
             </div>
           </div>
