@@ -15,6 +15,7 @@ import ConceptosGasto from "./pages/ConceptosGasto";
 import ConceptoDocumentos from "./pages/ConceptoDocumentos";
 import OCRUploadPage from "./pages/OCRUploadPage";
 import GastosDocumentos from "./pages/GastosDocumentos";
+import Gastos from "./pages/Gastos";
 import Cajas from "./pages/Cajas";
 import EmpresaUsuarios from "./pages/EmpresaUsuarios";
 import Usuarios from "./pages/Usuarios";
@@ -46,6 +47,7 @@ const App = () => (
                 element={<GastosDocumentos />}
               />
               <Route path="/conceptos-gasto/:id/documentos/upload" element={<OCRUploadPage />} />
+              <Route path="/gastos" element={<Gastos />} />
               <Route path="/cajas" element={<Cajas />} />
               <Route path="/usuarios" element={<Usuarios />} />
               <Route path="/empresa-usuarios" element={<EmpresaUsuarios />} />

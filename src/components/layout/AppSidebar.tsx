@@ -5,6 +5,7 @@ import {
   MapPin,
   DollarSign,
   FileText,
+  Receipt,
   Users,
   UserCog,
 } from "lucide-react";
@@ -28,6 +29,7 @@ const menuItems = [
   { title: "Sucursales", url: "/sucursales", icon: MapPin },
   { title: "Centros de Costo", url: "/centros-costo", icon: CreditCard },
   { title: "Conceptos de Gasto", url: "/conceptos-gasto", icon: DollarSign },
+  { title: "Gastos", url: "/gastos", icon: Receipt },
   { title: "Cajas", url: "/cajas", icon: FileText },
   { title: "Usuarios", url: "/usuarios", icon: UserCog },
   { title: "Usuarios por Empresa", url: "/empresa-usuarios", icon: Users },
