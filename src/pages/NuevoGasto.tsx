@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Upload, X, FileText, AlertCircle, DollarSign, Calendar, User, Building, CreditCard } from 'lucide-react';
 import { treasuryService } from '@/services/treasury.service';
-import { CreateGastoRequest, CategoriaGastoSelector, Caja } from '@/types/treasury';
+import { CreateGastoRequest, CategoriaGastoSelector, Caja, GastoItem } from '@/types/treasury';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,16 +30,27 @@ export default function NuevoGasto() {
 
   // Form state
   const [formData, setFormData] = useState<CreateGastoRequest>({
-    categoria_gasto: '',
-    caja: '',
-    monto: '',
-    moneda: 'PEN',
-    descripcion: '',
-    fecha_gasto: new Date().toISOString().split('T')[0],
-    forma_pago: 'EFECTIVO',
-    responsable_pago: '',
-    numero_operacion: '',
-    observaciones: '',
+    empresa: '',
+    sucursal: '',
+    categoria: 0,
+    responsable: '',
+    glosa: '',
+    importe: '',
+    pagado_por: 1,
+    reembolsable: false,
+    fondo: 'none',
+    tipo_documento: 'BOLETA',
+    nro_documento: '',
+    fecha_documento: new Date().toISOString().split('T')[0],
+    ruc_emisor: '',
+    nombre_emisor: '',
+    items: [{
+      nro_item: 1,
+      descripcion_item: '',
+      cantidad: 1,
+      precio_unitario: '0.00',
+      total_item: '0.00',
+    }],
   });
 
   // Files state
@@ -51,9 +62,20 @@ export default function NuevoGasto() {
     queryFn: () => treasuryService.getCategoriasSelector(),
   });
 
+  const { data: empresasData, isLoading: empresasLoading } = useQuery({
+    queryKey: ['empresas'],
+    queryFn: () => treasuryService.getEmpresas(),
+  });
+
+  const { data: sucursalesData, isLoading: sucursalesLoading } = useQuery({
+    queryKey: ['sucursales', formData.empresa],
+    queryFn: () => treasuryService.getSucursales(formData.empresa),
+    enabled: !!formData.empresa,
+  });
+
   const { data: cajasData, isLoading: cajasLoading } = useQuery({
-    queryKey: ['cajas-activas'],
-    queryFn: () => treasuryService.getCajas({ estado: 1 }),
+    queryKey: ['aperturas-cajas'],
+    queryFn: () => treasuryService.getAperturasCajas(),
   });
 
   // Mutations
@@ -99,8 +121,24 @@ export default function NuevoGasto() {
     e.preventDefault();
 
     // Validate required fields
-    if (!formData.categoria_gasto || !formData.caja || !formData.monto || !formData.descripcion) {
+    if (!formData.empresa || !formData.sucursal || !formData.categoria || !formData.responsable ||
+        !formData.glosa || !formData.importe || !formData.tipo_documento || !formData.fecha_documento) {
       toast.error('Por favor completa todos los campos requeridos');
+      return;
+    }
+
+    // Validate items
+    if (!formData.items || formData.items.length === 0) {
+      toast.error('Debes agregar al menos un ítem al gasto');
+      return;
+    }
+
+    const hasValidItems = formData.items.every(item =>
+      item.descripcion_item && item.cantidad > 0 && item.precio_unitario && parseFloat(item.precio_unitario) > 0
+    );
+
+    if (!hasValidItems) {
+      toast.error('Todos los ítems deben tener descripción, cantidad y precio unitario válido');
       return;
     }
 
@@ -175,7 +213,7 @@ export default function NuevoGasto() {
     }
   }, [createGastoMutation.isSuccess, createGastoMutation.data]);
 
-  if (categoriasLoading || cajasLoading) {
+  if (categoriasLoading || empresasLoading || sucursalesLoading || cajasLoading) {
     return (
       <div className="space-y-6">
         <div>
@@ -219,11 +257,54 @@ export default function NuevoGasto() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="empresa">Empresa *</Label>
+                  <Select
+                    value={formData.empresa}
+                    onValueChange={(value) => {
+                      setFormData({ ...formData, empresa: value, sucursal: '' });
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona una empresa" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {empresasData?.map((empresa) => (
+                        <SelectItem key={empresa.id} value={empresa.id}>
+                          {empresa.nombre}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="sucursal">Sucursal *</Label>
+                  <Select
+                    value={formData.sucursal}
+                    onValueChange={(value) => setFormData({ ...formData, sucursal: value })}
+                    disabled={!formData.empresa}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona una sucursal" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sucursalesData?.map((sucursal) => (
+                        <SelectItem key={sucursal.sucursal_id} value={sucursal.sucursal_id}>
+                          {sucursal.nombre_sucursal}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
               <div className="grid gap-2">
-                <Label htmlFor="categoria_gasto">Categoría de Gasto *</Label>
+                <Label htmlFor="categoria">Categoría de Gasto *</Label>
                 <Select
-                  value={formData.categoria_gasto}
-                  onValueChange={(value) => setFormData({ ...formData, categoria_gasto: value })}
+                  value={formData.categoria ? formData.categoria.toString() : ''}
+                  onValueChange={(value) => setFormData({ ...formData, categoria: parseInt(value) })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona una categoría" />
@@ -239,25 +320,13 @@ export default function NuevoGasto() {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="descripcion">Descripción del Gasto *</Label>
-                <Textarea
-                  id="descripcion"
-                  value={formData.descripcion}
-                  onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-                  placeholder="Describe detalladamente el gasto realizado"
-                  rows={3}
+                <Label htmlFor="responsable">Responsable del Gasto *</Label>
+                <Input
+                  id="responsable"
+                  value={formData.responsable}
+                  onChange={(e) => setFormData({ ...formData, responsable: e.target.value })}
+                  placeholder="ID del responsable"
                   required
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="observaciones">Observaciones Adicionales</Label>
-                <Textarea
-                  id="observaciones"
-                  value={formData.observaciones}
-                  onChange={(e) => setFormData({ ...formData, observaciones: e.target.value })}
-                  placeholder="Información adicional importante (opcional)"
-                  rows={2}
                 />
               </div>
             </CardContent>
@@ -272,78 +341,85 @@ export default function NuevoGasto() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="grid gap-2">
+                <Label htmlFor="glosa">Descripción del Gasto *</Label>
+                <Textarea
+                  id="glosa"
+                  value={formData.glosa}
+                  onChange={(e) => setFormData({ ...formData, glosa: e.target.value })}
+                  placeholder="Describe detalladamente el gasto realizado"
+                  rows={3}
+                  required
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="importe">Importe Total *</Label>
+                <Input
+                  id="importe"
+                  type="number"
+                  step="0.01"
+                  value={formData.importe}
+                  onChange={(e) => setFormData({ ...formData, importe: e.target.value })}
+                  placeholder="0.00"
+                  required
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="monto">Monto *</Label>
-                  <Input
-                    id="monto"
-                    type="number"
-                    step="0.01"
-                    value={formData.monto}
-                    onChange={(e) => setFormData({ ...formData, monto: e.target.value })}
-                    placeholder="0.00"
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="moneda">Moneda</Label>
+                  <Label htmlFor="pagado_por">Pagado Por *</Label>
                   <Select
-                    value={formData.moneda}
-                    onValueChange={(value: 'PEN' | 'USD' | 'EUR') =>
-                      setFormData({ ...formData, moneda: value })
-                    }
+                    value={formData.pagado_por ? formData.pagado_por.toString() : '1'}
+                    onValueChange={(value) => setFormData({ ...formData, pagado_por: parseInt(value) })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona quién pagó" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">Caja Chica</SelectItem>
+                      <SelectItem value="2">Caja Grande</SelectItem>
+                      <SelectItem value="3">Proveedor</SelectItem>
+                      <SelectItem value="4">Personal</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="reembolsable">¿Reembolsable?</Label>
+                  <Select
+                    value={formData.reembolsable.toString()}
+                    onValueChange={(value) => setFormData({ ...formData, reembolsable: value === 'true' })}
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="PEN">PEN - Soles</SelectItem>
-                      <SelectItem value="USD">USD - Dólares</SelectItem>
-                      <SelectItem value="EUR">EUR - Euros</SelectItem>
+                      <SelectItem value="true">Sí</SelectItem>
+                      <SelectItem value="false">No</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="forma_pago">Forma de Pago *</Label>
+                <Label htmlFor="fondo">Caja Asignada (Opcional)</Label>
                 <Select
-                  value={formData.forma_pago}
-                  onValueChange={(value) => setFormData({ ...formData, forma_pago: value })}
+                  value={formData.fondo}
+                  onValueChange={(value) => setFormData({ ...formData, fondo: value })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona forma de pago" />
+                    <SelectValue placeholder="Selecciona una caja" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="EFECTIVO">Efectivo</SelectItem>
-                    <SelectItem value="TARJETA_CREDITO">Tarjeta de Crédito</SelectItem>
-                    <SelectItem value="TARJETA_DEBITO">Tarjeta de Débito</SelectItem>
-                    <SelectItem value="TRANSFERENCIA">Transferencia Bancaria</SelectItem>
-                    <SelectItem value="YAPE">Yape</SelectItem>
-                    <SelectItem value="PLIN">Plin</SelectItem>
-                    <SelectItem value="OTRO">Otro</SelectItem>
+                    <SelectItem value="none">Sin caja asignada</SelectItem>
+                    {cajasData?.map((caja) => (
+                      <SelectItem key={caja.id} value={caja.id}>
+                        {caja.caja_nombre} - {caja.estado_display}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="responsable_pago">Responsable del Pago</Label>
-                <Input
-                  id="responsable_pago"
-                  value={formData.responsable_pago}
-                  onChange={(e) => setFormData({ ...formData, responsable_pago: e.target.value })}
-                  placeholder="Persona que realizó el pago"
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="numero_operacion">Número de Operación</Label>
-                <Input
-                  id="numero_operacion"
-                  value={formData.numero_operacion}
-                  onChange={(e) => setFormData({ ...formData, numero_operacion: e.target.value })}
-                  placeholder="Número de transacción (opcional)"
-                />
               </div>
             </CardContent>
           </Card>
@@ -353,40 +429,177 @@ export default function NuevoGasto() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Building className="h-5 w-5" />
-                Información Operativa
+                Información del Documento
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor="caja">Caja *</Label>
-                <Select
-                  value={formData.caja}
-                  onValueChange={(value) => setFormData({ ...formData, caja: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona una caja" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {cajasData?.data?.map((caja) => (
-                      <SelectItem key={caja.caja_id} value={caja.caja_id}>
-                        {caja.nombre_caja} - {caja.empresa_nombre}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="tipo_documento">Tipo de Documento *</Label>
+                  <Select
+                    value={formData.tipo_documento}
+                    onValueChange={(value) => setFormData({ ...formData, tipo_documento: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="BOLETA">Boleta</SelectItem>
+                      <SelectItem value="FACTURA">Factura</SelectItem>
+                      <SelectItem value="RECIBO">Recibo</SelectItem>
+                      <SelectItem value="TICKET">Ticket</SelectItem>
+                      <SelectItem value="OTRO">Otro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="nro_documento">Número de Documento</Label>
+                  <Input
+                    id="nro_documento"
+                    value={formData.nro_documento}
+                    onChange={(e) => setFormData({ ...formData, nro_documento: e.target.value })}
+                    placeholder="Ej: B001-123456"
+                  />
+                </div>
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="fecha_gasto">Fecha del Gasto *</Label>
+                <Label htmlFor="fecha_documento">Fecha del Documento *</Label>
                 <Input
-                  id="fecha_gasto"
+                  id="fecha_documento"
                   type="date"
-                  value={formData.fecha_gasto}
-                  onChange={(e) => setFormData({ ...formData, fecha_gasto: e.target.value })}
+                  value={formData.fecha_documento}
+                  onChange={(e) => setFormData({ ...formData, fecha_documento: e.target.value })}
                   max={new Date().toISOString().split('T')[0]}
                   required
                 />
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="ruc_emisor">RUC del Emisor</Label>
+                  <Input
+                    id="ruc_emisor"
+                    value={formData.ruc_emisor}
+                    onChange={(e) => setFormData({ ...formData, ruc_emisor: e.target.value })}
+                    placeholder="RUC de quien emitió el documento"
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="nombre_emisor">Nombre del Emisor</Label>
+                  <Input
+                    id="nombre_emisor"
+                    value={formData.nombre_emisor}
+                    onChange={(e) => setFormData({ ...formData, nombre_emisor: e.target.value })}
+                    placeholder="Nombre del proveedor/emisor"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Items del Gasto */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Items del Gasto
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {formData.items?.map((item, index) => (
+                <div key={index} className="grid grid-cols-12 gap-2 items-end">
+                  <div className="col-span-6">
+                    <Label htmlFor={`item-desc-${index}`}>Descripción *</Label>
+                    <Input
+                      id={`item-desc-${index}`}
+                      value={item.descripcion_item}
+                      onChange={(e) => {
+                        const newItems = [...formData.items];
+                        newItems[index].descripcion_item = e.target.value;
+                        setFormData({ ...formData, items: newItems });
+                      }}
+                      placeholder="Descripción del item"
+                      required
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <Label htmlFor={`item-cant-${index}`}>Cantidad *</Label>
+                    <Input
+                      id={`item-cant-${index}`}
+                      type="number"
+                      min="1"
+                      value={item.cantidad}
+                      onChange={(e) => {
+                        const newItems = [...formData.items];
+                        newItems[index].cantidad = parseInt(e.target.value) || 1;
+                        newItems[index].total_item = (newItems[index].cantidad * parseFloat(newItems[index].precio_unitario || '0')).toFixed(2);
+                        setFormData({ ...formData, items: newItems });
+                      }}
+                      required
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <Label htmlFor={`item-precio-${index}`}>Precio Unit. *</Label>
+                    <Input
+                      id={`item-precio-${index}`}
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={item.precio_unitario}
+                      onChange={(e) => {
+                        const newItems = [...formData.items];
+                        newItems[index].precio_unitario = e.target.value;
+                        newItems[index].total_item = (newItems[index].cantidad * parseFloat(e.target.value || '0')).toFixed(2);
+                        setFormData({ ...formData, items: newItems });
+                      }}
+                      placeholder="0.00"
+                      required
+                    />
+                  </div>
+                  <div className="col-span-1">
+                    <Label>Total</Label>
+                    <div className="h-10 px-3 py-2 bg-gray-100 rounded-md text-sm">
+                      {item.total_item}
+                    </div>
+                  </div>
+                  <div className="col-span-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        if (formData.items.length > 1) {
+                          const newItems = formData.items.filter((_, i) => i !== index);
+                          setFormData({ ...formData, items: newItems });
+                        }
+                      }}
+                      disabled={formData.items.length === 1}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  const newItem: GastoItem = {
+                    nro_item: formData.items.length + 1,
+                    descripcion_item: '',
+                    cantidad: 1,
+                    precio_unitario: '0.00',
+                    total_item: '0.00',
+                  };
+                  setFormData({ ...formData, items: [...formData.items, newItem] });
+                }}
+              >
+                Agregar Item
+              </Button>
             </CardContent>
           </Card>
 

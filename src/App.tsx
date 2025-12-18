@@ -21,6 +21,9 @@ import GastoDetalle from "./pages/GastoDetalle";
 import Cajas from "./pages/Cajas";
 import EmpresaUsuarios from "./pages/EmpresaUsuarios";
 import Usuarios from "./pages/Usuarios";
+import { AsignacionesFondos } from "./pages/AsignacionesFondos";
+import { AsignacionDetalle } from "./pages/AsignacionDetalle";
+import { Aprobaciones } from "./pages/Aprobaciones";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -53,6 +56,9 @@ const App = () => (
               <Route path="/gastos/nuevo" element={<NuevoGasto />} />
               <Route path="/gastos/:id" element={<GastoDetalle />} />
               <Route path="/cajas" element={<Cajas />} />
+              <Route path="/asignaciones-fondo" element={<AsignacionesFondos />} />
+              <Route path="/asignaciones-fondo/:id" element={<AsignacionDetalle />} />
+              <Route path="/aprobaciones" element={<Aprobaciones />} />
               <Route path="/usuarios" element={<Usuarios />} />
               <Route path="/empresa-usuarios" element={<EmpresaUsuarios />} />
             </Route>

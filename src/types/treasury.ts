@@ -59,18 +59,41 @@ export interface Caja {
   estado: number;
 }
 
+// Sucursal
+export interface Sucursal {
+  sucursal_id: string;
+  empresa_nombre: string;
+  nombre_sucursal: string;
+  acronimo: string;
+  estado: number;
+}
+
+// Programación de Ruta
+export interface ProgramacionRuta {
+  Empresa: string;
+  Sucursal: string;
+  Mesa: string;
+  Vendedor: string;
+  Territorio: string;
+  Zona: string;
+  Ruta: string;
+  Dia_Visita: string;
+  Total_de_clientes: number;
+}
+
 // Apertura de Caja
 export interface AperturaCaja {
   id: string;
-  caja: string;
-  caja_nombre?: string;
+  caja_codigo: string;
+  caja_nombre: string;
+  usuario_username: string;
+  cajero_nombre: string;
   fecha_apertura: string;
-  monto_inicial: string;
-  saldo_actual: string;
+  saldo_inicial: string;
+  saldo_inicial_billetes: string;
+  saldo_inicial_monedas: string;
   estado: number;
-  responsable: string;
-  responsable_nombre?: string;
-  observaciones?: string;
+  estado_display: string;
 }
 
 // Cierre de Caja

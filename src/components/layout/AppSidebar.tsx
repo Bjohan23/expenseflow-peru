@@ -8,6 +8,8 @@ import {
   Receipt,
   Users,
   UserCog,
+  Wallet,
+  CheckCircle,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
@@ -30,6 +32,8 @@ const menuItems = [
   { title: "Centros de Costo", url: "/centros-costo", icon: CreditCard },
   { title: "Conceptos de Gasto", url: "/conceptos-gasto", icon: DollarSign },
   { title: "Gastos", url: "/gastos", icon: Receipt },
+  { title: "Asignaciones de Fondo", url: "/asignaciones-fondo", icon: Wallet },
+  { title: "Aprobaciones", url: "/aprobaciones", icon: CheckCircle },
   { title: "Cajas", url: "/cajas", icon: FileText },
   { title: "Usuarios", url: "/usuarios", icon: UserCog },
   { title: "Usuarios por Empresa", url: "/empresa-usuarios", icon: Users },
