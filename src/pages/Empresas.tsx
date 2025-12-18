@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Building2, Plus, Pencil, DollarSign, CheckCircle } from "lucide-react";
-// TODO: Migrate to new API service - import { supabase } from "@/lib/supabase";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Building2, Plus, Pencil, DollarSign, CheckCircle, Trash2, AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
+import { treasuryService } from "@/services/treasury.service";
 import { Button } from "@/components/ui/button";
 import { LoadingSkeleton } from "@/components/common/LoadingSkeleton";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -20,26 +21,110 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function Empresas() {
   const [formOpen, setFormOpen] = useState(false);
   const [selectedEmpresa, setSelectedEmpresa] = useState<any>(null);
+  const queryClient = useQueryClient();
+
   const { data: empresas, isLoading } = useQuery({
     queryKey: ["empresas"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("empresas")
-        .select("*")
-        .order("created_at", { ascending: false });
+    queryFn: () => treasuryService.getEmpresas(),
+  });
 
-      if (error) throw error;
-      return data;
+  // CREATE mutation
+  const createEmpresaMutation = useMutation({
+    mutationFn: (data: any) => treasuryService.createEmpresa(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["empresas"] });
+      setFormOpen(false);
+      setSelectedEmpresa(null);
+      toast.success("Empresa creada exitosamente");
+    },
+    onError: (error: any) => {
+      console.error("Error creating empresa:", error);
+      if (error.response?.status === 403) {
+        toast.error("No tienes permisos para crear empresas");
+      } else {
+        toast.error("Error al crear la empresa");
+      }
     },
   });
 
+  // UPDATE mutation
+  const updateEmpresaMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      treasuryService.updateEmpresa(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["empresas"] });
+      setFormOpen(false);
+      setSelectedEmpresa(null);
+      toast.success("Empresa actualizada exitosamente");
+    },
+    onError: (error: any) => {
+      console.error("Error updating empresa:", error);
+      if (error.response?.status === 403) {
+        toast.error("No tienes permisos para actualizar empresas");
+      } else {
+        toast.error("Error al actualizar la empresa");
+      }
+    },
+  });
+
+  // DELETE mutation
+  const deleteEmpresaMutation = useMutation({
+    mutationFn: (id: string) => treasuryService.deleteEmpresa(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["empresas"] });
+      toast.success("Empresa eliminada exitosamente");
+    },
+    onError: (error: any) => {
+      console.error("Error deleting empresa:", error);
+      if (error.response?.status === 403) {
+        toast.error("No tienes permisos para eliminar empresas");
+      } else {
+        toast.error("Error al eliminar la empresa");
+      }
+    },
+  });
+
+  // Handle form submission
+  const handleSubmit = (data: any) => {
+    if (selectedEmpresa) {
+      // Update existing empresa
+      updateEmpresaMutation.mutate({ id: selectedEmpresa.id, data });
+    } else {
+      // Create new empresa
+      createEmpresaMutation.mutate(data);
+    }
+  };
+
+  // Handle delete
+  const handleDelete = (id: string) => {
+    deleteEmpresaMutation.mutate(id);
+  };
+
   const { searchTerm, setSearchTerm, filteredData } = useTableFilter({
     data: empresas || [],
-    searchFields: ["ruc", "razon_social", "nombre_comercial"],
+    searchFields: ["ruc", "nombre", "acronimo"],
   });
 
   const {
@@ -56,9 +141,8 @@ export default function Empresas() {
   });
 
   // Calcular KPIs
-  const empresasActivas = empresas?.filter((e) => e.estado === "activo").length || 0;
-  const limiteTotal =
-    empresas?.reduce((sum, e) => sum + Number(e.limite_gasto_mensual || 0), 0) || 0;
+  const empresasActivas = empresas?.filter((e) => e.estado === 1).length || 0;
+  const empresasInactivas = empresas?.filter((e) => e.estado !== 1).length || 0;
 
   if (isLoading) {
     return (
@@ -105,10 +189,10 @@ export default function Empresas() {
           variant="success"
         />
         <KPICard
-          title="Límite Total Mensual"
-          value={`S/ ${limiteTotal.toLocaleString("es-PE", { minimumFractionDigits: 2 })}`}
-          icon={DollarSign}
-          variant="default"
+          title="Empresas Inactivas"
+          value={empresasInactivas}
+          icon={Building2}
+          variant="warning"
         />
       </div>
 
@@ -133,9 +217,7 @@ export default function Empresas() {
               <TableRow>
                 <TableHead>RUC</TableHead>
                 <TableHead>Razón Social</TableHead>
-                <TableHead>Nombre Comercial</TableHead>
-                <TableHead>Moneda</TableHead>
-                <TableHead>Límite Mensual</TableHead>
+                <TableHead>Acrónimo</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead>Acciones</TableHead>
               </TableRow>
@@ -144,34 +226,54 @@ export default function Empresas() {
               {paginatedData?.map((empresa) => (
                 <TableRow key={empresa.id}>
                   <TableCell className="font-medium">{empresa.ruc}</TableCell>
-                  <TableCell>{empresa.razon_social}</TableCell>
-                  <TableCell>{empresa.nombre_comercial || "-"}</TableCell>
+                  <TableCell>{empresa.nombre}</TableCell>
                   <TableCell>
                     <span className="inline-flex items-center px-2 py-1 rounded-md bg-secondary text-secondary-foreground text-xs font-medium">
-                      {empresa.moneda}
+                      {empresa.acronimo}
                     </span>
-                  </TableCell>
-                  <TableCell>
-                    {empresa.moneda}{" "}
-                    {Number(empresa.limite_gasto_mensual).toLocaleString("es-PE", {
-                      minimumFractionDigits: 2,
-                    })}
                   </TableCell>
                   <TableCell>
                     <StatusBadge status={empresa.estado} />
                   </TableCell>
                   <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedEmpresa(empresa);
-                        setFormOpen(true);
-                      }}
-                    >
-                      <Pencil className="w-4 h-4 mr-2" />
-                      Editar
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedEmpresa(empresa);
+                          setFormOpen(true);
+                        }}
+                      >
+                        <Pencil className="w-4 h-4 mr-2" />
+                        Editar
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Eliminar
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Esta acción eliminará permanentemente la empresa "{empresa.nombre}" y no se puede deshacer.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(empresa.id)}
+                              className="bg-red-600 hover:bg-red-700"
+                            >
+                              Eliminar
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -218,6 +320,8 @@ export default function Empresas() {
           setSelectedEmpresa(null);
         }}
         empresa={selectedEmpresa}
+        onSubmit={handleSubmit}
+        isLoading={createEmpresaMutation.isPending || updateEmpresaMutation.isPending}
       />
     </div>
   );

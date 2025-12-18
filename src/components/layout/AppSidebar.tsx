@@ -10,6 +10,7 @@ import {
   UserCog,
   Wallet,
   CheckCircle,
+  FolderPlus,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
@@ -31,6 +32,7 @@ const menuItems = [
   { title: "Sucursales", url: "/sucursales", icon: MapPin },
   { title: "Centros de Costo", url: "/centros-costo", icon: CreditCard },
   { title: "Conceptos de Gasto", url: "/conceptos-gasto", icon: DollarSign },
+  { title: "Categorías y Conceptos", url: "/categorias-conceptos", icon: FolderPlus },
   { title: "Gastos", url: "/gastos", icon: Receipt },
   { title: "Asignaciones de Fondo", url: "/asignaciones-fondo", icon: Wallet },
   { title: "Aprobaciones", url: "/aprobaciones", icon: CheckCircle },

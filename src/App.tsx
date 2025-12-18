@@ -24,6 +24,7 @@ import Usuarios from "./pages/Usuarios";
 import { AsignacionesFondos } from "./pages/AsignacionesFondos";
 import { AsignacionDetalle } from "./pages/AsignacionDetalle";
 import { Aprobaciones } from "./pages/Aprobaciones";
+import CategoriasConceptos from "./pages/CategoriasConceptos";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -59,6 +60,7 @@ const App = () => (
               <Route path="/asignaciones-fondo" element={<AsignacionesFondos />} />
               <Route path="/asignaciones-fondo/:id" element={<AsignacionDetalle />} />
               <Route path="/aprobaciones" element={<Aprobaciones />} />
+              <Route path="/categorias-conceptos" element={<CategoriasConceptos />} />
               <Route path="/usuarios" element={<Usuarios />} />
               <Route path="/empresa-usuarios" element={<EmpresaUsuarios />} />
             </Route>

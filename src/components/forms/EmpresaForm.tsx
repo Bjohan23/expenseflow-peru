@@ -2,8 +2,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useEffect } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-// TODO: Migrate to new API service - import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -22,26 +20,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { toast } from "sonner";
-import { ImageUpload } from "@/components/common/ImageUpload";
 
 const empresaSchema = z.object({
-  ruc: z.string().min(11, "El RUC debe tener 11 dígitos").max(11),
+  nro_ruc: z.string().min(11, "El RUC debe tener 11 dígitos").max(11),
   razon_social: z.string().min(1, "La razón social es requerida"),
-  nombre_comercial: z.string().optional(),
-  direccion: z.string().optional(),
-  telefono: z.string().optional(),
-  email: z.string().email("Email inválido").optional().or(z.literal("")),
-  moneda: z.enum(["PEN", "USD"]),
-  limite_gasto_mensual: z.string().optional(),
-  logo_url: z.string().optional(),
+  direccion: z.string().min(1, "La dirección es requerida"),
+  acronimo: z.string().min(1, "El acrónimo es requerido"),
+  avatar: z.string().optional(),
 });
 
 type EmpresaFormValues = z.infer<typeof empresaSchema>;
@@ -50,23 +35,19 @@ interface EmpresaFormProps {
   open: boolean;
   onClose: () => void;
   empresa?: any;
+  onSubmit?: (data: EmpresaFormValues) => void;
+  isLoading?: boolean;
 }
 
-export function EmpresaForm({ open, onClose, empresa }: EmpresaFormProps) {
-  const queryClient = useQueryClient();
-
+export function EmpresaForm({ open, onClose, empresa, onSubmit, isLoading = false }: EmpresaFormProps) {
   const form = useForm<EmpresaFormValues>({
     resolver: zodResolver(empresaSchema),
     defaultValues: {
-      ruc: "",
+      nro_ruc: "",
       razon_social: "",
-      nombre_comercial: "",
       direccion: "",
-      telefono: "",
-      email: "",
-      moneda: "PEN",
-      limite_gasto_mensual: "",
-      logo_url: "",
+      acronimo: "",
+      avatar: "",
     },
   });
 
@@ -74,52 +55,19 @@ export function EmpresaForm({ open, onClose, empresa }: EmpresaFormProps) {
   useEffect(() => {
     if (open) {
       form.reset({
-        ruc: empresa?.ruc || "",
-        razon_social: empresa?.razon_social || "",
-        nombre_comercial: empresa?.nombre_comercial || "",
+        nro_ruc: empresa?.ruc || "",
+        razon_social: empresa?.nombre || "",
         direccion: empresa?.direccion || "",
-        telefono: empresa?.telefono || "",
-        email: empresa?.email || "",
-        moneda: empresa?.moneda || "PEN",
-        limite_gasto_mensual: empresa?.limite_gasto_mensual?.toString() || "",
-        logo_url: empresa?.logo_url || "",
+        acronimo: empresa?.acronimo || "",
+        avatar: empresa?.avatar || "",
       });
     }
   }, [empresa, open, form]);
 
-  const mutation = useMutation({
-    mutationFn: async (values: EmpresaFormValues) => {
-      const data = {
-        ...values,
-        limite_gasto_mensual: values.limite_gasto_mensual
-          ? parseFloat(values.limite_gasto_mensual)
-          : null,
-        estado: "activo",
-      };
-
-      if (empresa?.id) {
-        const { error } = await supabase.from("empresas").update(data).eq("id", empresa.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("empresas").insert([data]);
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["empresas"] });
-      toast.success(
-        empresa?.id ? "Empresa actualizada correctamente" : "Empresa creada correctamente"
-      );
-      onClose();
-      form.reset();
-    },
-    onError: (error: any) => {
-      toast.error("Error al guardar la empresa: " + error.message);
-    },
-  });
-
-  const onSubmit = (values: EmpresaFormValues) => {
-    mutation.mutate(values);
+  const handleSubmit = (values: EmpresaFormValues) => {
+    if (onSubmit) {
+      onSubmit(values);
+    }
   };
 
   return (
@@ -135,11 +83,11 @@ export function EmpresaForm({ open, onClose, empresa }: EmpresaFormProps) {
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="ruc"
+                name="nro_ruc"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>RUC</FormLabel>
@@ -153,21 +101,13 @@ export function EmpresaForm({ open, onClose, empresa }: EmpresaFormProps) {
 
               <FormField
                 control={form.control}
-                name="moneda"
+                name="acronimo"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Moneda</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar moneda" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="PEN">PEN - Soles</SelectItem>
-                        <SelectItem value="USD">USD - Dólares</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Acrónimo</FormLabel>
+                    <FormControl>
+                      <Input placeholder="EMP" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -190,24 +130,10 @@ export function EmpresaForm({ open, onClose, empresa }: EmpresaFormProps) {
 
             <FormField
               control={form.control}
-              name="nombre_comercial"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nombre Comercial (opcional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Mi Empresa" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
               name="direccion"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Dirección (opcional)</FormLabel>
+                  <FormLabel>Dirección</FormLabel>
                   <FormControl>
                     <Input placeholder="Av. Principal 123" {...field} />
                   </FormControl>
@@ -216,65 +142,18 @@ export function EmpresaForm({ open, onClose, empresa }: EmpresaFormProps) {
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="telefono"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Teléfono (opcional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="01-1234567" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email (opcional)</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="empresa@ejemplo.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
             <FormField
               control={form.control}
-              name="logo_url"
+              name="avatar"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Logo de la Empresa (opcional)</FormLabel>
+                  <FormLabel>Avatar (URL opcional)</FormLabel>
                   <FormControl>
-                    <ImageUpload
-                      currentImageUrl={field.value}
-                      onImageUploaded={(url) => field.onChange(url)}
-                      onImageRemoved={() => field.onChange("")}
-                      bucket="company-logos"
-                      folder={empresa?.ruc || "temp"}
-                      maxSizeMB={5}
+                    <Input
+                      type="url"
+                      placeholder="https://ejemplo.com/logo.png"
+                      {...field}
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="limite_gasto_mensual"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Límite de Gasto Mensual (opcional)</FormLabel>
-                  <FormControl>
-                    <Input type="number" step="0.01" placeholder="50000.00" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -285,8 +164,8 @@ export function EmpresaForm({ open, onClose, empresa }: EmpresaFormProps) {
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={mutation.isPending}>
-                {mutation.isPending ? "Guardando..." : empresa?.id ? "Actualizar" : "Crear"}
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? "Guardando..." : empresa?.id ? "Actualizar" : "Crear"}
               </Button>
             </DialogFooter>
           </form>

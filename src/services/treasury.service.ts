@@ -440,11 +440,16 @@ class TreasuryService {
   // ===== EMPRESAS Y SUCURSALES =====
   async getEmpresas() {
     const response = await this.api.get<ApiResponse<Array<{
-      id: string;
-      value: string;
-      label: string;
+      empresa_id: string;
+      nro_ruc: string;
+      razon_social: string;
+      direccion: string;
       acronimo: string;
-    }>>>('/core/empresas/selector/', {
+      avatar: string;
+      estado: number;
+      created_at?: string;
+      updated_at?: string;
+    }>>>('/core/empresas/', {
       baseURL: `${this.api.defaults.baseURL.replace('/treasury', '')}`
     });
 
@@ -452,11 +457,67 @@ class TreasuryService {
 
     // Transformar al formato esperado por los componentes
     return empresas.map(empresa => ({
-      id: empresa.id,
-      nombre: empresa.label,
+      id: empresa.empresa_id,
+      nombre: empresa.razon_social,
       acronimo: empresa.acronimo,
-      value: empresa.value
+      ruc: empresa.nro_ruc,
+      direccion: empresa.direccion,
+      avatar: empresa.avatar,
+      estado: empresa.estado,
+      created_at: empresa.created_at,
+      updated_at: empresa.updated_at
     }));
+  }
+
+  // ===== CRUD EMPRESAS =====
+  async createEmpresa(data: {
+    nro_ruc: string;
+    razon_social: string;
+    direccion: string;
+    acronimo: string;
+    avatar?: string;
+  }) {
+    const response = await this.api.post<ApiResponse<any>>('/core/empresas/', data, {
+      baseURL: `${this.api.defaults.baseURL.replace('/treasury', '')}`
+    });
+    return this.extractData(response);
+  }
+
+  async updateEmpresa(empresaId: string, data: {
+    empresa_id?: string;
+    nro_ruc?: string;
+    razon_social?: string;
+    direccion?: string;
+    acronimo?: string;
+    avatar?: string;
+    estado?: number;
+  }) {
+    const response = await this.api.put<ApiResponse<any>>(`/core/empresas/${empresaId}/`, data, {
+      baseURL: `${this.api.defaults.baseURL.replace('/treasury', '')}`
+    });
+    return this.extractData(response);
+  }
+
+  async patchEmpresa(empresaId: string, data: Partial<{
+    empresa_id?: string;
+    nro_ruc?: string;
+    razon_social?: string;
+    direccion?: string;
+    acronimo?: string;
+    avatar?: string;
+    estado?: number;
+  }>) {
+    const response = await this.api.patch<ApiResponse<any>>(`/core/empresas/${empresaId}/`, data, {
+      baseURL: `${this.api.defaults.baseURL.replace('/treasury', '')}`
+    });
+    return this.extractData(response);
+  }
+
+  async deleteEmpresa(empresaId: string) {
+    const response = await this.api.delete<ApiResponse<any>>(`/core/empresas/${empresaId}/`, {
+      baseURL: `${this.api.defaults.baseURL.replace('/treasury', '')}`
+    });
+    return this.extractData(response);
   }
 
   async getSucursales(empresaId?: string): Promise<Sucursal[]> {
