@@ -1,0 +1,513 @@
+{{base_url}}/api/v1/treasury/categorias-gasto/
+respuesta :
+{
+    "success": true,
+    "message": "Data retrieved successfully",
+    "data": [
+        {
+            "categoria_id": "1",
+            "nombre_categoria": "GASTOS DISTRIBUCION Y REPARTO",
+            "descripcion_categoria": "gastos"
+        }
+    ],
+    "pagination": {
+        "count": 1,
+        "page_size": 15,
+        "current_page": 1,
+        "total_pages": 1,
+        "start_index": 1,
+        "end_index": 1,
+        "next": null,
+        "previous": null,
+        "has_next": false,
+        "has_previous": false,
+        "links": {
+            "first": null,
+            "last": null
+        }
+    }
+}
+
+{{base_url}}/api/v1/treasury/categorias-gasto/selector/
+{
+    "success": true,
+    "message": "Categoría Gasto selector data retrieved successfully",
+    "data": [
+        {
+            "id": "1",
+            "value": "1",
+            "label": "GASTOS DISTRIBUCION Y REPARTO",
+            "categoria_id": "1",
+            "nombre_categoria": "GASTOS DISTRIBUCION Y REPARTO",
+            "concepto": null
+        }
+    ],
+    "timestamp": "2025-12-18T15:01:11.466490+00:00"
+}
+
+{{base_url}}/api/v1/treasury/categorias-gasto/
+
+
+
+{
+    "success": true,
+    "message": "Data retrieved successfully",
+    "data": [
+        {
+            "categoria_id": "1",
+            "nombre_categoria": "GASTOS DISTRIBUCION Y REPARTO",
+            "descripcion_categoria": "gastos"
+        }
+    ],
+    "pagination": {
+        "count": 1,
+        "page_size": 15,
+        "current_page": 1,
+        "total_pages": 1,
+        "start_index": 1,
+        "end_index": 1,
+        "next": null,
+        "previous": null,
+        "has_next": false,
+        "has_previous": false,
+        "links": {
+            "first": null,
+            "last": null
+        }
+    }
+}
+
+{{base_url}}/api/v1/treasury/categorias-gasto/1/
+{
+    "categoria_id": "1",
+    "nombre_categoria": "GASTOS DISTRIBUCION Y REPARTO",
+    "descripcion_categoria": "gastos",
+    "concepto": null,
+    "created_at": "2025-12-15T17:48:18.071889-05:00",
+    "updated_at": "2025-12-15T17:48:18.071904-05:00"
+}
+put {{base_url}}/api/v1/treasury/categorias-gasto/1/
+envio :
+{
+    "categoria_id": "1",
+    "nombre_categoria": "GASTOS DISTRIBUCION Y REPARTO",
+    "descripcion_categoria": "gastos",
+    "concepto": null,
+}
+respuesta :
+{
+    "nombre_categoria": "GASTOS DISTRIBUCION Y REPARTO",
+    "descripcion_categoria": "gastos",
+    "concepto": null
+}
+get {{base_url}}/api/v1/treasury/cajas/
+{
+    "success": true,
+    "message": "Data retrieved successfully",
+    "data": [
+        {
+            "caja_id": "ef47d527-bc19-4500-a365-435033e870d1",
+            "codigo_caja": "010101",
+            "nombre_caja": "CAJA N° 1 - ANGELICA - PARQUE INDUSTRIAL",
+            "empresa_nombre": "ANGELICA CHAVEZ HURTADO",
+            "sucursal_nombre": "ANGELICA - PARQUE INDUSTRIAL",
+            "tipo_caja": "02",
+            "tipo_caja_display": "CAJA CHICA",
+            "estado": 1
+        },
+        {
+            "caja_id": "1cf36288-9a92-4500-8c00-6ebd25d4a058",
+            "codigo_caja": "010102",
+            "nombre_caja": "CAJA N° 2 - ANGELICA - PARQUE INDUSTRIAL",
+            "empresa_nombre": "ANGELICA CHAVEZ HURTADO",
+            "sucursal_nombre": "ANGELICA - PARQUE INDUSTRIAL",
+            "tipo_caja": "02",
+            "tipo_caja_display": "CAJA CHICA",
+            "estado": 1
+        },
+    ],
+    "pagination": {
+        "count": 10,
+        "page_size": 15,
+        "current_page": 1,
+        "total_pages": 1,
+        "start_index": 1,
+        "end_index": 10,
+        "next": null,
+        "previous": null,
+        "has_next": false,
+        "has_previous": false,
+        "links": {
+            "first": null,
+            "last": null
+        }
+    }
+}
+post /api/v1/treasury/apertura-cajas/{id}/close/
+Parameters
+Try it out
+Name	Description
+id *
+string($uuid)
+(path)
+A UUID string identifying this apertura caja.
+
+id
+Request body
+
+application/json
+Example Value
+Schema
+{
+  "saldo_final": "4.",
+  "observaciones": "string"
+}
+
+get {{base_url}}/api/v1/treasury/gastos/
+{
+    "success": true,
+    "message": "Data retrieved successfully",
+    "data": [],
+    "pagination": {
+        "count": 0,
+        "page_size": 15,
+        "current_page": 1,
+        "total_pages": 1,
+        "start_index": 1,
+        "end_index": 0,
+        "next": null,
+        "previous": null,
+        "has_next": false,
+        "has_previous": false,
+        "links": {
+            "first": null,
+            "last": null
+        }
+    }
+}
+
+POST
+/api/v1/treasury/gastos/
+ViewSet for Gasto (Expense) management.
+
+Provides full CRUD operations for expenses with nested items and evidence. Uses GastoService for business logic and validation.
+
+Parameters
+Try it out
+No parameters
+
+Request body
+
+application/json
+Example Value
+Schema
+{
+  "empresa": "string",
+  "sucursal": "string",
+  "categoria": 0,
+  "responsable": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "glosa": "string",
+  "importe": "-.8",
+  "pagado_por": 1,
+  "reembolsable": true,
+  "fondo": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "tipo_documento": "string",
+  "nro_documento": "string",
+  "fecha_documento": "2025-12-18",
+  "ruc_emisor": "string",
+  "nombre_emisor": "string",
+  "items": [
+    {
+      "descripcion_item": "string",
+      "cantidad": 2147483647,
+      "precio_unitario": "99329425.",
+      "total_item": "-7484.2"
+    }
+  ]
+}
+
+POST
+/api/v1/treasury/gastos/{gasto_id}/evidencias/add/
+
+
+Add evidence/attachment to an existing gasto.
+
+Parameters
+Try it out
+Name	Description
+gasto_id *
+string($uuid)
+(path)
+A UUID string identifying this gasto.
+
+gasto_id
+Request body
+
+application/json
+Example Value
+Schema
+{
+  "empresa": "string",
+  "sucursal": "string",
+  "categoria": 0,
+  "glosa": "string",
+  "responsable": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "importe": "-1.63",
+  "pagado_por": 1,
+  "reembolsable": true,
+  "fondo": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "tipo_documento": "string",
+  "nro_documento": "string",
+  "fecha_documento": "2025-12-18",
+  "ruc_emisor": "string",
+  "nombre_emisor": "string",
+  "estado": 1
+}
+
+GET
+/api/v1/treasury/gastos/{gasto_id}/evidencias/
+
+
+Get all evidence/attachments for a specific gasto.
+
+Parameters
+Try it out
+Name	Description
+gasto_id *
+string($uuid)
+(path)
+A UUID string identifying this gasto.
+
+gasto_id
+Responses
+Code	Description	Links
+200
+Media type
+
+application/json
+Controls Accept header.
+Example Value
+Schema
+{
+  "gasto_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "empresa": "string",
+  "empresa_nombre": "string",
+  "sucursal": "string",
+  "sucursal_nombre": "string",
+  "nro_transaccion": 0,
+  "categoria": 0,
+  "categoria_nombre": "string",
+  "glosa": "string",
+  "fecha_gasto": "2025-12-18T15:11:21.240Z",
+  "responsable": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "responsable_nombre": "string",
+  "importe": "24032",
+  "pagado_por": 1,
+  "pagado_por_display": "string",
+  "reembolsable": true,
+  "fondo": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "fondo_nombre": "string",
+  "tipo_documento": "string",
+  "tipo_documento_nombre": "string",
+  "nro_documento": "string",
+  "fecha_documento": "2025-12-18",
+  "ruc_emisor": "string",
+  "nombre_emisor": "string",
+  "estado": 1,
+  "estado_display": "string",
+  "items": [
+    {
+      "item_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "gasto": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "nro_item": 2147483647,
+      "descripcion_item": "string",
+      "cantidad": 2147483647,
+      "precio_unitario": "-9",
+      "total_item": "-50914817.",
+      "created_at": "2025-12-18T15:11:21.240Z",
+      "updated_at": "2025-12-18T15:11:21.240Z",
+      "created_by": "string",
+      "updated_by": "string"
+    }
+  ],
+  "evidencias": [
+    {
+      "id": 0,
+      "gasto": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "comprobante": "string",
+      "comprobante_url": "string",
+      "created_at": "2025-12-18T15:11:21.240Z",
+      "created_by": "string"
+    }
+  ],
+  "items_count": 0,
+  "evidencias_count": 0,
+  "created_at": "2025-12-18T15:11:21.240Z",
+  "updated_at": "2025-12-18T15:11:21.240Z",
+  "created_by": "string",
+  "updated_by": "string"
+}
+
+Treasury - Fund Assignments
+
+post
+/api/v1/treasury/asignaciones-fondo/{fondo_id}/anular/
+
+Name	Description
+fondo_id *
+string($uuid)
+(path)
+A UUID string identifying this asignacion fondo.
+post
+/api/v1/treasury/asignaciones-fondo/{fondo_id}/marcar-por-rendir/
+Name	Description
+fondo_id *
+string($uuid)
+(path)
+A UUID string identifying this asignacion fondo.
+
+post
+/api/v1/treasury/asignaciones-fondo/{fondo_id}/rendir/
+Name	Description
+fondo_id *
+string($uuid)
+(path)
+A UUID string identifying this asignacion fondo.
+get
+/api/v1/treasury/asignaciones-fondo/pendientes/
+Name	Description
+empresa
+string
+(query)
+empresa
+estado
+integer
+(query)
+1 - Asignado
+2 - Por Reendido
+3 - Reendido
+9 - Anulado
+Available values : 1, 2, 3, 9
+
+
+--
+ordering
+string
+(query)
+Which field to use when ordering the results.
+
+ordering
+page
+integer
+(query)
+A page number within the paginated result set.
+
+page
+page_size
+integer
+(query)
+Number of results to return per page.
+
+page_size
+responsable
+string($uuid)
+(query)
+responsable
+search
+string
+(query)
+A search term.
+
+search
+sucursal
+string
+(query)
+sucursal
+tipo_fondo
+string
+(query)
+
+post :
+/api/v1/treasury/asignaciones-fondo/validate-responsable/
+Validate if a responsable (staff member) can receive a new fund assignment.
+
+    This endpoint checks if the specified responsable has any pending fund assignments
+    (in ASIGNADO or POR_RENDIR state). A responsable cannot have more than one unrendered
+    fund at any given time.
+
+    **Business Rules:**
+    - A responsable can only have one pending fund at a time
+    - Funds in RENDIDO or ANULADO states do not block new assignments
+
+    **Query Parameters:**
+    - `responsable_id`: ID of the Personal (staff member) to validate
+
+    **Response:**
+    ```json
+    {
+      "success": true,
+      "message": "Responsable can receive new fund",
+      "data": {
+        "can_receive_fund": true,
+        "pending_funds_count": 0,
+        "pending_funds": []
+      }
+    }
+    ```
+
+GET
+/api/v1/treasury/asignaciones-fondo/vencidos/
+Get
+Name	Description
+empresa
+string
+(query)
+empresa
+estado
+integer
+(query)
+1 - Asignado
+2 - Por Reendido
+3 - Reendido
+9 - Anulado
+Available values : 1, 2, 3, 9
+
+
+--
+ordering
+string
+(query)
+Which field to use when ordering the results.
+
+ordering
+page
+integer
+(query)
+A page number within the paginated result set.
+
+page
+page_size
+integer
+(query)
+Number of results to return per page.
+
+page_size
+responsable
+string($uuid)
+(query)
+responsable
+search
+string
+(query)
+A search term.
+
+search
+sucursal
+string
+(query)
+sucursal
+tipo_fondo
+string
+(query)
+tipo_fondo
+

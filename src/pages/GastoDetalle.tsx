@@ -1,157 +1,208 @@
-/**
- * Página de detalle de un gasto
- * Muestra información completa, historial y permite aprobar/rechazar
- */
-
-import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import {
   ArrowLeft,
-  Edit,
-  Ban,
-  CheckCircle2,
-  XCircle,
-  DollarSign,
+  Eye,
+  Download,
+  Trash2,
+  Upload,
   FileText,
-  Clock,
+  DollarSign,
+  Calendar,
   User,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Separator } from "@/components/ui/separator";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { GastoForm } from "@/components/forms/GastoForm";
-import {
-  useGasto,
-  useHistorialGasto,
-  useEnviarGasto,
-  useAprobarGasto,
-  useRechazarGasto,
-  useAnularGasto,
-  useActualizarGasto,
-  useRegistrarPago,
-} from "@/hooks/useGastos";
-import { ESTADOS_GASTO, formatearMonto } from "@/types/gastos";
-import type { EstadoGasto, FormularioGasto, Moneda, FormaPago } from "@/types/gastos";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+  Building,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  Clock,
+  CreditCard,
+  Ban,
+} from 'lucide-react';
+import { treasuryService } from '@/services/treasury.service';
+import { Gasto, Evidencia, EstadoGasto, PagadoPor } from '@/types/treasury';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
+import { LoadingSkeleton } from '@/components/common/LoadingSkeleton';
+import { useAuth } from '@/contexts/AuthContext';
+
+// Estado configuration
+const ESTADO_CONFIG = {
+  [EstadoGasto.BORRADOR]: { label: 'Borrador', color: 'bg-gray-100 text-gray-800' },
+  [EstadoGasto.PENDIENTE]: { label: 'Pendiente de Aprobación', color: 'bg-yellow-100 text-yellow-800' },
+  [EstadoGasto.APROBADO]: { label: 'Aprobado', color: 'bg-green-100 text-green-800' },
+  [EstadoGasto.PAGADO]: { label: 'Pagado', color: 'bg-blue-100 text-blue-800' },
+  [EstadoGasto.RECHAZADO]: { label: 'Rechazado', color: 'bg-red-100 text-red-800' },
+  [EstadoGasto.ANULADO]: { label: 'Anulado', color: 'bg-gray-100 text-gray-600' },
+};
 
 export default function GastoDetalle() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  // Estado de diálogos
-  const [modalEditar, setModalEditar] = useState(false);
-  const [modalAprobar, setModalAprobar] = useState(false);
-  const [modalRechazar, setModalRechazar] = useState(false);
-  const [modalAnular, setModalAnular] = useState(false);
-  const [dialogEnviar, setDialogEnviar] = useState(false);
-  const [modalPago, setModalPago] = useState(false);
+  // Dialog states
+  const [approveDialog, setApproveDialog] = useState(false);
+  const [rejectDialog, setRejectDialog] = useState(false);
+  const [annulDialog, setAnnulDialog] = useState(false);
+  const [approveObservations, setApproveObservations] = useState('');
+  const [rejectReason, setRejectReason] = useState('');
+  const [annulReason, setAnnulReason] = useState('');
 
-  const [observaciones, setObservaciones] = useState("");
-  const [motivoRechazo, setMotivoRechazo] = useState("");
-  const [motivoAnular, setMotivoAnular] = useState("");
-  const [formaPago, setFormaPago] = useState<FormaPago>("efectivo");
-  const [numeroOperacion, setNumeroOperacion] = useState("");
-  const [observacionesPago, setObservacionesPago] = useState("");
+  // Queries
+  const { data: gasto, isLoading, error } = useQuery({
+    queryKey: ['gasto', id],
+    queryFn: () => treasuryService.getGastoById(id!),
+    enabled: !!id,
+  });
 
-  // Queries y mutations
-  const { data: gasto, isLoading, error } = useGasto(id!);
-  const { data: historial = [] } = useHistorialGasto(id!);
+  const { data: evidenciasData, isLoading: evidenciasLoading } = useQuery({
+    queryKey: ['evidencias', id],
+    queryFn: () => treasuryService.getEvidencias(id!),
+    enabled: !!id,
+  });
 
-  const enviarGasto = useEnviarGasto();
-  const aprobarGasto = useAprobarGasto();
-  const rechazarGasto = useRechazarGasto();
-  const anularGasto = useAnularGasto();
-  const actualizarGasto = useActualizarGasto();
-  const registrarPago = useRegistrarPago();
+  // Mutations
+  const approveMutation = useMutation({
+    mutationFn: (data?: { observaciones?: string }) =>
+      treasuryService.aprobarGasto(id!, data),
+    onSuccess: () => {
+      toast.success('Gasto aprobado exitosamente');
+      queryClient.invalidateQueries(['gasto', id]);
+      queryClient.invalidateQueries(['gastos']);
+      setApproveDialog(false);
+      setApproveObservations('');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Error al aprobar gasto');
+    },
+  });
 
-  // Handlers
-  const handleEnviar = async () => {
-    await enviarGasto.mutateAsync(id!);
-    setDialogEnviar(false);
+  const rejectMutation = useMutation({
+    mutationFn: (data: { motivo: string }) =>
+      treasuryService.rechazarGasto(id!, data),
+    onSuccess: () => {
+      toast.success('Gasto rechazado exitosamente');
+      queryClient.invalidateQueries(['gasto', id]);
+      queryClient.invalidateQueries(['gastos']);
+      setRejectDialog(false);
+      setRejectReason('');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Error al rechazar gasto');
+    },
+  });
+
+  const annulMutation = useMutation({
+    mutationFn: (data: { motivo: string }) =>
+      treasuryService.anularGasto(id!, data),
+    onSuccess: () => {
+      toast.success('Gasto anulado exitosamente');
+      queryClient.invalidateQueries(['gasto', id]);
+      queryClient.invalidateQueries(['gastos']);
+      setAnnulDialog(false);
+      setAnnulReason('');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Error al anular gasto');
+    },
+  });
+
+  const deleteEvidenciaMutation = useMutation({
+    mutationFn: (evidenciaId: number) =>
+      treasuryService.deleteEvidencia(id!, evidenciaId),
+    onSuccess: () => {
+      toast.success('Evidencia eliminada exitosamente');
+      queryClient.invalidateQueries(['evidencias', id]);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Error al eliminar evidencia');
+    },
+  });
+
+  const handleApprove = () => {
+    approveMutation.mutate(approveObservations ? { observaciones: approveObservations } : undefined);
   };
 
-  const handleAprobar = async () => {
-    await aprobarGasto.mutateAsync({
-      gasto_id: id!,
-      observaciones: observaciones || undefined,
-    });
-    setModalAprobar(false);
-    setObservaciones("");
+  const handleReject = () => {
+    if (!rejectReason.trim()) {
+      toast.error('Debe especificar el motivo del rechazo');
+      return;
+    }
+    rejectMutation.mutate({ motivo: rejectReason });
   };
 
-  const handleRechazar = async () => {
-    if (!motivoRechazo.trim()) return;
-
-    await rechazarGasto.mutateAsync({
-      gasto_id: id!,
-      motivo_rechazo: motivoRechazo,
-    });
-    setModalRechazar(false);
-    setMotivoRechazo("");
+  const handleAnnul = () => {
+    if (!annulReason.trim()) {
+      toast.error('Debe especificar el motivo de anulación');
+      return;
+    }
+    annulMutation.mutate({ motivo: annulReason });
   };
 
-  const handleAnular = async () => {
-    if (!motivoAnular.trim()) return;
-
-    await anularGasto.mutateAsync({
-      id: id!,
-      motivo: motivoAnular,
-    });
-    setModalAnular(false);
-    setMotivoAnular("");
+  const handleDeleteEvidencia = (evidenciaId: number) => {
+    if (confirm('¿Está seguro de eliminar esta evidencia?')) {
+      deleteEvidenciaMutation.mutate(evidenciaId);
+    }
   };
 
-  const handleEditar = async (datos: FormularioGasto) => {
-    await actualizarGasto.mutateAsync({
-      id: id!,
-      datos,
-    });
-    setModalEditar(false);
+  const downloadEvidencia = (evidencia: Evidencia) => {
+    window.open(evidencia.archivo_url, '_blank');
   };
 
-  const handleRegistrarPago = async () => {
-    await registrarPago.mutateAsync({
-      gasto_id: id!,
-      forma_pago: formaPago,
-      numero_operacion: numeroOperacion || undefined,
-      observaciones: observacionesPago || undefined,
-    });
-    setModalPago(false);
-    setFormaPago("efectivo");
-    setNumeroOperacion("");
-    setObservacionesPago("");
+  const formatCurrency = (amount: string, currency: string) => {
+    const num = parseFloat(amount);
+    return new Intl.NumberFormat('es-PE', {
+      style: 'currency',
+      currency: currency === 'USD' ? 'USD' : currency === 'EUR' ? 'EUR' : 'PEN',
+      minimumFractionDigits: 2,
+    }).format(num);
   };
+
+  const getFormaPagoLabel = (formaPago: string) => {
+    const labels: { [key: string]: string } = {
+      'EFECTIVO': 'Efectivo',
+      'TARJETA_CREDITO': 'Tarjeta de Crédito',
+      'TARJETA_DEBITO': 'Tarjeta de Débito',
+      'TRANSFERENCIA': 'Transferencia Bancaria',
+      'YAPE': 'Yape',
+      'PLIN': 'Plin',
+      'OTRO': 'Otro',
+    };
+    return labels[formaPago] || formaPago;
+  };
+
+  const getMonedaSymbol = (moneda: string) => {
+    const symbols: { [key: string]: string } = {
+      'PEN': 'S/',
+      'USD': '$',
+      'EUR': '€',
+    };
+    return symbols[moneda] || moneda;
+  };
+
+  // Check if user can approve based on permissions
+  const canApprove = gasto?.estado === EstadoGasto.PENDIENTE &&
+    user?.role && ['aprobador', 'responsable', 'admin'].includes(user.role);
+
+  const canEdit = gasto?.estado === EstadoGasto.BORRADOR &&
+    (gasto.usuario_id === user?.id || ['responsable', 'admin'].includes(user?.role || ''));
 
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-96 w-full" />
+        <LoadingSkeleton type="form" count={3} />
       </div>
     );
   }
@@ -159,7 +210,7 @@ export default function GastoDetalle() {
   if (error || !gasto) {
     return (
       <div className="space-y-6">
-        <Button variant="ghost" onClick={() => navigate("/gastos")}>
+        <Button variant="ghost" onClick={() => navigate('/gastos')}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Volver a Gastos
         </Button>
@@ -172,198 +223,216 @@ export default function GastoDetalle() {
     );
   }
 
-  const estadoConfig = ESTADOS_GASTO[gasto.estado as EstadoGasto];
+  const estadoConfig = ESTADO_CONFIG[gasto.estado as EstadoGasto];
+  const evidencias = evidenciasData?.evidencias || [];
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" onClick={() => navigate("/gastos")}>
+          <Button variant="ghost" onClick={() => navigate('/gastos')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver
+            Volver a Gastos
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Gasto {gasto.codigo}</h1>
-            <p className="text-gray-500">Detalle completo del gasto</p>
+            <h1 className="text-3xl font-bold text-gray-900">
+              Gasto #{gasto.codigo || gasto.gasto_id.slice(-8)}
+            </h1>
+            <p className="text-gray-600">Detalle completo del gasto</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className={estadoConfig.color}>
-            {estadoConfig.label}
-          </Badge>
-        </div>
+        <Badge variant="outline" className={estadoConfig.color}>
+          {estadoConfig.label}
+        </Badge>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Columna principal */}
+        {/* Main content */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Información básica */}
+          {/* Información del gasto */}
           <Card>
             <CardHeader>
-              <CardTitle>Información del Gasto</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Información del Gasto
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-gray-500">Código</p>
-                  <p className="font-mono font-semibold">{gasto.codigo}</p>
+                  <p className="text-sm text-gray-500">Fecha del Gasto</p>
+                  <p className="font-semibold flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    {format(new Date(gasto.fecha_gasto), 'dd \'de\' MMMM \'de\' yyyy', { locale: es })}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Fecha</p>
-                  <p className="font-semibold">
-                    {format(new Date(gasto.fecha_gasto), "dd 'de' MMMM 'de' yyyy", { locale: es })}
-                  </p>
+                  <p className="text-sm text-gray-500">Categoría</p>
+                  <p className="font-semibold">{gasto.categoria_gasto_nombre}</p>
                 </div>
               </div>
 
               <Separator />
 
               <div>
-                <p className="text-sm text-gray-500">Concepto</p>
-                <p className="font-semibold">{gasto.concepto_nombre}</p>
-                {gasto.concepto_categoria && (
-                  <p className="text-sm text-gray-500">{gasto.concepto_categoria}</p>
-                )}
+                <p className="text-sm text-gray-500">Descripción</p>
+                <p className="text-gray-900 mt-1">{gasto.descripcion}</p>
               </div>
 
-              <div>
-                <p className="text-sm text-gray-500">Descripción</p>
-                <p className="text-gray-900">{gasto.descripcion}</p>
-              </div>
+              {gasto.observaciones && (
+                <>
+                  <Separator />
+                  <div>
+                    <p className="text-sm text-gray-500">Observaciones</p>
+                    <p className="text-gray-900 mt-1">{gasto.observaciones}</p>
+                  </div>
+                </>
+              )}
 
               <Separator />
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-500">Monto</p>
-                  <p className="text-2xl font-bold">
-                    {formatearMonto(gasto.monto, gasto.moneda as Moneda)}
+                  <p className="text-2xl font-bold text-green-600">
+                    {getMonedaSymbol(gasto.moneda)} {parseFloat(gasto.monto).toFixed(2)}
                   </p>
-                  {Boolean(gasto.tipo_cambio && gasto.moneda !== "PEN") && (
-                    <p className="text-sm text-gray-500">
-                      T.C: {gasto.tipo_cambio} ≈{" "}
-                      {formatearMonto((gasto.monto || 0) * (gasto.tipo_cambio || 0), "PEN")}
-                    </p>
-                  )}
+                  <p className="text-sm text-gray-500">{gasto.moneda}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Estado</p>
-                  <Badge variant="outline" className={`${estadoConfig.color} text-base`}>
-                    {estadoConfig.label}
-                  </Badge>
+                  <p className="text-sm text-gray-500">Forma de Pago</p>
+                  <p className="font-semibold flex items-center gap-2">
+                    <CreditCard className="h-4 w-4" />
+                    {getFormaPagoLabel(gasto.forma_pago)}
+                  </p>
                 </div>
               </div>
 
-              {gasto.excede_limite && (
-                <Alert variant="destructive">
-                  <AlertDescription>
-                    Este gasto excede el límite máximo del concepto (
-                    {formatearMonto(gasto.concepto_limite || 0, "PEN")})
-                  </AlertDescription>
-                </Alert>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Beneficiario */}
-          {gasto.beneficiario_nombre && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Beneficiario</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  {gasto.beneficiario_tipo && (
-                    <div>
-                      <p className="text-sm text-gray-500">Tipo</p>
-                      <p className="font-semibold capitalize">{gasto.beneficiario_tipo}</p>
-                    </div>
-                  )}
-                  {gasto.beneficiario_documento && (
-                    <div>
-                      <p className="text-sm text-gray-500">Documento</p>
-                      <p className="font-mono font-semibold">{gasto.beneficiario_documento}</p>
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Nombre/Razón Social</p>
-                  <p className="font-semibold">{gasto.beneficiario_nombre}</p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Asignaciones */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Asignaciones</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-500">Centro de Costo</p>
-                  <p className="font-semibold">{gasto.centro_costo_nombre || "No asignado"}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Caja</p>
-                  <p className="font-semibold">{gasto.caja_nombre || "No asignado"}</p>
-                </div>
-              </div>
-              {gasto.observaciones && (
+              {gasto.responsable_pago && (
                 <>
                   <Separator />
                   <div>
-                    <p className="text-sm text-gray-500">Observaciones</p>
-                    <p className="text-gray-900">{gasto.observaciones}</p>
+                    <p className="text-sm text-gray-500">Responsable del Pago</p>
+                    <p className="font-semibold flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      {gasto.responsable_pago}
+                    </p>
+                  </div>
+                </>
+              )}
+
+              {gasto.numero_operacion && (
+                <>
+                  <Separator />
+                  <div>
+                    <p className="text-sm text-gray-500">Número de Operación</p>
+                    <p className="font-mono font-semibold">{gasto.numero_operacion}</p>
                   </div>
                 </>
               )}
             </CardContent>
           </Card>
 
-          {/* Historial */}
-          {historial.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Historial de Cambios</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {historial.map((item) => (
-                    <div key={item.id} className="flex gap-4">
-                      <div className="flex-shrink-0">
-                        <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-                          <Clock className="h-5 w-5 text-purple-600" />
+          {/* Información de caja y empresa */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building className="h-5 w-5" />
+                Información Operativa
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-500">Empresa</p>
+                  <p className="font-semibold">{gasto.empresa_nombre}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Sucursal</p>
+                  <p className="font-semibold">{gasto.sucursal_nombre || 'No asignada'}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-500">Caja</p>
+                  <p className="font-semibold">{gasto.caja_nombre}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Centro de Costo</p>
+                  <p className="font-semibold">{gasto.centro_costo_nombre || 'No asignado'}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Evidencias */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Evidencias del Gasto
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {evidenciasLoading ? (
+                <LoadingSkeleton type="table" count={2} />
+              ) : evidencias.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <p>No hay evidencias adjuntas</p>
+                </div>
+              ) : (
+                <div className="grid gap-4">
+                  {evidencias.map((evidencia) => (
+                    <div
+                      key={evidencia.evidencia_id}
+                      className="flex items-center justify-between p-4 border rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        <FileText className="h-5 w-5 text-gray-400" />
+                        <div>
+                          <p className="font-medium">{evidencia.nombre_archivo}</p>
+                          <p className="text-sm text-gray-500">
+                            Subido el {format(new Date(evidencia.fecha_subida), 'dd/MM/yyyy HH:mm', { locale: es })}
+                          </p>
                         </div>
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <p className="font-semibold capitalize">{item.accion}</p>
-                          <p className="text-sm text-gray-500">
-                            {format(new Date(item.created_at), "dd/MM/yyyy HH:mm", { locale: es })}
-                          </p>
-                        </div>
-                        {item.estado_anterior && item.estado_nuevo && (
-                          <p className="text-sm text-gray-600">
-                            {ESTADOS_GASTO[item.estado_anterior as EstadoGasto]?.label} →{" "}
-                            {ESTADOS_GASTO[item.estado_nuevo as EstadoGasto]?.label}
-                          </p>
-                        )}
-                        {item.comentario && (
-                          <p className="text-sm text-gray-600 mt-1">{item.comentario}</p>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => downloadEvidencia(evidencia)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => downloadEvidencia(evidencia)}
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                        {(canEdit || user?.role === 'admin') && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteEvidencia(evidencia.evidencia_id)}
+                            disabled={deleteEvidenciaMutation.isLoading}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
                         )}
                       </div>
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              )}
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Columna lateral */}
+        {/* Sidebar */}
         <div className="space-y-6">
           {/* Acciones */}
           <Card>
@@ -371,36 +440,31 @@ export default function GastoDetalle() {
               <CardTitle>Acciones</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              {gasto.estado === "borrador" && (
-                <>
-                  <Button className="w-full" variant="default" onClick={() => setModalEditar(true)}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Editar Gasto
-                  </Button>
-                  <Button
-                    className="w-full"
-                    variant="outline"
-                    onClick={() => setDialogEnviar(true)}
-                  >
-                    Enviar para Aprobación
-                  </Button>
-                </>
+              {canEdit && (
+                <Button
+                  className="w-full"
+                  variant="outline"
+                  onClick={() => navigate(`/gastos/${id}/edit`)}
+                >
+                  Editar Gasto
+                </Button>
               )}
 
-              {gasto.estado === "pendiente" && (
+              {canApprove && (
                 <>
                   <Button
                     className="w-full"
-                    variant="default"
-                    onClick={() => setModalAprobar(true)}
+                    onClick={() => setApproveDialog(true)}
+                    disabled={approveMutation.isLoading}
                   >
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    <CheckCircle className="h-4 w-4 mr-2" />
                     Aprobar Gasto
                   </Button>
                   <Button
                     className="w-full"
                     variant="destructive"
-                    onClick={() => setModalRechazar(true)}
+                    onClick={() => setRejectDialog(true)}
+                    disabled={rejectMutation.isLoading}
                   >
                     <XCircle className="h-4 w-4 mr-2" />
                     Rechazar Gasto
@@ -408,15 +472,13 @@ export default function GastoDetalle() {
                 </>
               )}
 
-              {gasto.estado === "aprobado" && (
-                <Button className="w-full" variant="default" onClick={() => setModalPago(true)}>
-                  <DollarSign className="h-4 w-4 mr-2" />
-                  Registrar Pago
-                </Button>
-              )}
-
-              {["borrador", "pendiente", "aprobado"].includes(gasto.estado) && (
-                <Button className="w-full" variant="outline" onClick={() => setModalAnular(true)}>
+              {[EstadoGasto.BORRADOR, EstadoGasto.PENDIENTE, EstadoGasto.APROBADO].includes(gasto.estado as EstadoGasto) && (
+                <Button
+                  className="w-full"
+                  variant="outline"
+                  onClick={() => setAnnulDialog(true)}
+                  disabled={annulMutation.isLoading}
+                >
                   <Ban className="h-4 w-4 mr-2" />
                   Anular Gasto
                 </Button>
@@ -424,28 +486,7 @@ export default function GastoDetalle() {
             </CardContent>
           </Card>
 
-          {/* Documento vinculado */}
-          {gasto.documento_id && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Documento Vinculado</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-gray-400" />
-                  <div className="flex-1">
-                    <p className="font-semibold">{gasto.documento_tipo}</p>
-                    <p className="text-sm text-gray-500">{gasto.documento_numero}</p>
-                  </div>
-                </div>
-                <Button className="w-full" variant="outline" size="sm">
-                  Ver Documento
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Usuario */}
+          {/* Información del usuario */}
           <Card>
             <CardHeader>
               <CardTitle>Información del Registro</CardTitle>
@@ -453,221 +494,151 @@ export default function GastoDetalle() {
             <CardContent className="space-y-4">
               <div>
                 <p className="text-sm text-gray-500">Creado por</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <User className="h-4 w-4 text-gray-400" />
-                  <p className="font-semibold">{gasto.usuario_email}</p>
-                </div>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Fecha de creación</p>
-                <p className="text-sm">
-                  {format(new Date(gasto.created_at), "dd/MM/yyyy HH:mm", { locale: es })}
+                <p className="font-semibold flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  {gasto.usuario_nombre || gasto.usuario_email}
                 </p>
               </div>
-              {gasto.aprobado_por_email && (
+              <div>
+                <p className="text-sm text-gray-500">Fecha de Creación</p>
+                <p className="text-sm flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  {format(new Date(gasto.created_at), 'dd/MM/yyyy HH:mm', { locale: es })}
+                </p>
+              </div>
+              {gasto.updated_at && gasto.updated_at !== gasto.created_at && (
                 <div>
-                  <p className="text-sm text-gray-500">Aprobado por</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <User className="h-4 w-4 text-gray-400" />
-                    <p className="font-semibold">{gasto.aprobado_por_email}</p>
-                  </div>
-                  {gasto.aprobado_en && (
-                    <p className="text-sm text-gray-500">
-                      {format(new Date(gasto.aprobado_en), "dd/MM/yyyy HH:mm", { locale: es })}
-                    </p>
-                  )}
+                  <p className="text-sm text-gray-500">Última Actualización</p>
+                  <p className="text-sm flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    {format(new Date(gasto.updated_at), 'dd/MM/yyyy HH:mm', { locale: es })}
+                  </p>
                 </div>
               )}
             </CardContent>
           </Card>
+
+          {/* Alertas */}
+          {gasto.estado === EstadoGasto.RECHAZADO && gasto.motivo_rechazo && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Motivo del rechazo:</strong> {gasto.motivo_rechazo}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {gasto.estado === EstadoGasto.ANULADO && gasto.motivo_anulacion && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Motivo de anulación:</strong> {gasto.motivo_anulacion}
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
       </div>
 
-      {/* Diálogos */}
-      {/* Dialog Editar Gasto */}
-      <GastoForm
-        open={modalEditar}
-        onClose={() => setModalEditar(false)}
-        gasto={gasto}
-        onSubmit={handleEditar}
-      />
-
-      {/* AlertDialog Enviar para Aprobación */}
-      <AlertDialog open={dialogEnviar} onOpenChange={setDialogEnviar}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Enviar gasto para aprobación?</AlertDialogTitle>
-            <AlertDialogDescription>
-              El gasto {gasto.codigo} será enviado para su aprobación. Esta acción no se puede
-              deshacer.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleEnviar}>Enviar</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Dialog Aprobar Gasto */}
-      <Dialog open={modalAprobar} onOpenChange={setModalAprobar}>
+      {/* Dialogs */}
+      <Dialog open={approveDialog} onOpenChange={setApproveDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Aprobar Gasto</DialogTitle>
+            <DialogDescription>
+              ¿Está seguro de aprobar este gasto por {getMonedaSymbol(gasto.moneda)} {parseFloat(gasto.monto).toFixed(2)}?
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="observaciones">Observaciones (opcional)</Label>
+              <Label htmlFor="approve-obs">Observaciones (opcional)</Label>
               <Textarea
-                id="observaciones"
-                value={observaciones}
-                onChange={(e) => setObservaciones(e.target.value)}
+                id="approve-obs"
+                value={approveObservations}
+                onChange={(e) => setApproveObservations(e.target.value)}
                 placeholder="Agregar comentarios sobre la aprobación..."
-                rows={4}
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setModalAprobar(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleAprobar} disabled={aprobarGasto.isPending}>
-                {aprobarGasto.isPending ? "Aprobando..." : "Aprobar Gasto"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog Rechazar Gasto */}
-      <Dialog open={modalRechazar} onOpenChange={setModalRechazar}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Rechazar Gasto</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="motivo-rechazo">
-                Motivo del rechazo <span className="text-red-500">*</span>
-              </Label>
-              <Textarea
-                id="motivo-rechazo"
-                value={motivoRechazo}
-                onChange={(e) => setMotivoRechazo(e.target.value)}
-                placeholder="Especificar el motivo del rechazo..."
-                rows={4}
-                required
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setModalRechazar(false)}>
-                Cancelar
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleRechazar}
-                disabled={rechazarGasto.isPending || !motivoRechazo.trim()}
-              >
-                {rechazarGasto.isPending ? "Rechazando..." : "Rechazar Gasto"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* AlertDialog Anular Gasto */}
-      <Dialog open={modalAnular} onOpenChange={setModalAnular}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Anular Gasto</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="motivo-anular">
-                Motivo de anulación <span className="text-red-500">*</span>
-              </Label>
-              <Textarea
-                id="motivo-anular"
-                value={motivoAnular}
-                onChange={(e) => setMotivoAnular(e.target.value)}
-                placeholder="Especificar el motivo de la anulación..."
-                rows={4}
-                required
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setModalAnular(false)}>
-                Cancelar
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleAnular}
-                disabled={anularGasto.isPending || !motivoAnular.trim()}
-              >
-                {anularGasto.isPending ? "Anulando..." : "Anular Gasto"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog Registrar Pago */}
-      <Dialog open={modalPago} onOpenChange={setModalPago}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Registrar Pago</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="forma-pago">
-                Forma de Pago <span className="text-red-500">*</span>
-              </Label>
-              <Select value={formaPago} onValueChange={(value) => setFormaPago(value as FormaPago)}>
-                <SelectTrigger id="forma-pago">
-                  <SelectValue placeholder="Seleccionar forma de pago" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="efectivo">Efectivo</SelectItem>
-                  <SelectItem value="tarjeta">Tarjeta</SelectItem>
-                  <SelectItem value="transferencia">Transferencia</SelectItem>
-                  <SelectItem value="cheque">Cheque</SelectItem>
-                  <SelectItem value="otro">Otro</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {(formaPago === "transferencia" ||
-              formaPago === "cheque" ||
-              formaPago === "tarjeta") && (
-              <div>
-                <Label htmlFor="numero-operacion">Número de Operación / Cheque</Label>
-                <Input
-                  id="numero-operacion"
-                  value={numeroOperacion}
-                  onChange={(e) => setNumeroOperacion(e.target.value)}
-                  placeholder="Ingrese el número de operación o cheque"
-                />
-              </div>
-            )}
-
-            <div>
-              <Label htmlFor="observaciones-pago">Observaciones (opcional)</Label>
-              <Textarea
-                id="observaciones-pago"
-                value={observacionesPago}
-                onChange={(e) => setObservacionesPago(e.target.value)}
-                placeholder="Agregar comentarios sobre el pago..."
                 rows={3}
               />
             </div>
-
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setModalPago(false)}>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setApproveDialog(false)}>
                 Cancelar
               </Button>
-              <Button onClick={handleRegistrarPago} disabled={registrarPago.isPending}>
-                {registrarPago.isPending ? "Registrando..." : "Registrar Pago"}
+              <Button onClick={handleApprove} disabled={approveMutation.isLoading}>
+                {approveMutation.isLoading ? 'Aprobando...' : 'Aprobar Gasto'}
               </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={rejectDialog} onOpenChange={setRejectDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rechazar Gasto</DialogTitle>
+            <DialogDescription>
+              Especifique el motivo por el cual rechaza este gasto.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="reject-reason">Motivo del rechazo *</Label>
+              <Textarea
+                id="reject-reason"
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="Especifique el motivo del rechazo..."
+                rows={4}
+                required
+              />
             </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setRejectDialog(false)}>
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleReject}
+                disabled={rejectMutation.isLoading || !rejectReason.trim()}
+              >
+                {rejectMutation.isLoading ? 'Rechazando...' : 'Rechazar Gasto'}
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={annulDialog} onOpenChange={setAnnulDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Anular Gasto</DialogTitle>
+            <DialogDescription>
+              Especifique el motivo por el cual anula este gasto.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="annul-reason">Motivo de anulación *</Label>
+              <Textarea
+                id="annul-reason"
+                value={annulReason}
+                onChange={(e) => setAnnulReason(e.target.value)}
+                placeholder="Especifique el motivo de la anulación..."
+                rows={4}
+                required
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setAnnulDialog(false)}>
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleAnnul}
+                disabled={annulMutation.isLoading || !annulReason.trim()}
+              >
+                {annulMutation.isLoading ? 'Anulando...' : 'Anular Gasto'}
+              </Button>
+            </DialogFooter>
           </div>
         </DialogContent>
       </Dialog>
