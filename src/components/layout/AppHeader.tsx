@@ -14,14 +14,13 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 export function AppHeader() {
-  const { profile, signOut } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
     try {
-      await signOut();
+      await logout();
       toast.success("Sesión cerrada exitosamente");
-      navigate("/login");
     } catch (error) {
       toast.error("Error al cerrar sesión");
     }
@@ -45,12 +44,17 @@ export function AppHeader() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="gap-2 h-9 px-2 sm:px-3">
               <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm">
-                {profile?.full_name.charAt(0).toUpperCase()}
+                {(user?.firstName?.charAt(0) || user?.username?.charAt(0) || 'U').toUpperCase()}
               </div>
               <div className="hidden lg:block text-left">
-                <p className="text-sm font-medium leading-tight">{profile?.full_name}</p>
+                <p className="text-sm font-medium leading-tight">
+                  {user?.firstName && user?.lastName
+                    ? `${user.firstName} ${user.lastName}`
+                    : user?.username || 'Usuario'
+                  }
+                </p>
                 <p className="text-xs text-muted-foreground capitalize leading-tight">
-                  {profile?.role}
+                  {user?.groups?.[0] || 'Usuario'}
                 </p>
               </div>
             </Button>

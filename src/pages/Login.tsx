@@ -1,51 +1,57 @@
-import { Navigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useEffect } from 'react';
 import { Building2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
-import { useLogin } from '@/hooks/useAuth';
-import { loginCredentialsSchema, type LoginCredentials, AuthResponse } from '@/types/api';
+import { useNavigate } from 'react-router-dom';
+import { loginCredentialsSchema, type LoginCredentials } from '@/types/api';
+import { toast } from 'sonner';
 
 export default function Login() {
-  const { user } = useAuth();
-  const login = useLogin();
+  const { login, isAuthenticated, isLoading } = useAuth();
+  const navigate = useNavigate();
 
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<LoginCredentials>({
     resolver: zodResolver(loginCredentialsSchema),
   });
 
   const onSubmit = async (data: LoginCredentials) => {
     try {
-      const result = await login.mutateAsync(data);
-
-      // After successful login, store tokens and navigate
-      if (result) {
-        const authData = result as AuthResponse;
-        const { access, refresh } = authData;
-
-        // Store tokens
-        localStorage.setItem('auth_token', access);
-        localStorage.setItem('refresh_token', refresh);
-
-        // Navigate to dashboard - user profile will be fetched by AuthContext
-        window.location.href = '/dashboard';
-      }
-    } catch (error) {
-      // Error handling is done by the mutation hook
-      console.error('Login error:', error);
+      await login(data);
+      toast.success('Login successful');
+      navigate('/dashboard', { replace: true });
+    } catch (error: any) {
+      toast.error(error.message || 'Login failed');
     }
   };
 
-  if (user) {
-    return <Navigate to="/dashboard" replace />;
+  // If already authenticated, redirect to dashboard
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
+  if (isAuthenticated) {
+    return null;
+  }
+
+  // Show loading while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
   }
 
   return (
@@ -100,9 +106,9 @@ export default function Login() {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={login.isPending}
+                disabled={isSubmitting}
               >
-                {login.isPending ? (
+                {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Iniciando sesión...
@@ -112,14 +118,6 @@ export default function Login() {
                 )}
               </Button>
             </form>
-
-            {login.error && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-sm text-red-600">
-                  {login.error.message || 'Login failed'}
-                </p>
-              </div>
-            )}
           </CardContent>
         </Card>
 

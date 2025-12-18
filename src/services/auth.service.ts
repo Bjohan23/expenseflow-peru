@@ -20,8 +20,11 @@ export class AuthService {
   async login(credentials: LoginCredentials): Promise<ApiServiceResponse<AuthResponse>> {
     try {
       const response = await this.http.post<AuthResponse>(
-        API_ENDPOINTS.AUTH.LOGIN,
-        credentials
+        '/api/v1/auth/token/',
+        {
+          username: credentials.username,
+          password: credentials.password
+        }
       );
 
       // Validate response data with Zod schema
@@ -35,7 +38,7 @@ export class AuthService {
       console.error('Login error:', error);
       return {
         success: false,
-        error: error.message || 'Login failed',
+        error: error.response?.data?.detail || error.message || 'Login failed',
       };
     }
   }
@@ -46,7 +49,7 @@ export class AuthService {
   async refreshToken(refreshToken: string): Promise<ApiServiceResponse<TokenRefreshResponse>> {
     try {
       const response = await this.http.post<TokenRefreshResponse>(
-        API_ENDPOINTS.AUTH.REFRESH,
+        '/api/v1/auth/token/refresh/',
         { refresh: refreshToken }
       );
 
@@ -61,7 +64,7 @@ export class AuthService {
       console.error('Token refresh error:', error);
       return {
         success: false,
-        error: error.message || 'Token refresh failed',
+        error: error.response?.data?.detail || error.message || 'Token refresh failed',
       };
     }
   }
@@ -72,7 +75,7 @@ export class AuthService {
   async getUserProfile(): Promise<ApiServiceResponse<UserProfile>> {
     try {
       const response = await this.http.get<UserProfile>(
-        API_ENDPOINTS.AUTH.PROFILE
+        '/api/v1/auth/users/profile/'
       );
 
       // Validate response data with Zod schema
@@ -86,18 +89,17 @@ export class AuthService {
       console.error('Get user profile error:', error);
       return {
         success: false,
-        error: error.message || 'Failed to get user profile',
+        error: error.response?.data?.detail || error.message || 'Failed to get user profile',
       };
     }
   }
 
   /**
-   * Logout user (optional - depends on API implementation)
+   * Logout user
    */
   async logout(): Promise<ApiServiceResponse<void>> {
     try {
-      // Some APIs might require explicit logout
-      await this.http.post(API_ENDPOINTS.AUTH.LOGOUT);
+      await this.http.post('/api/v1/auth/users/logout/');
 
       return {
         success: true,
@@ -116,7 +118,7 @@ export class AuthService {
    */
   async changePassword(currentPassword: string, newPassword: string): Promise<ApiServiceResponse<void>> {
     try {
-      await this.http.post('/api/v1/auth/change-password/', {
+      await this.http.post('/api/v1/auth/users/change_password/', {
         current_password: currentPassword,
         new_password: newPassword,
       });
@@ -128,7 +130,7 @@ export class AuthService {
       console.error('Change password error:', error);
       return {
         success: false,
-        error: error.message || 'Failed to change password',
+        error: error.response?.data?.detail || error.message || 'Failed to change password',
       };
     }
   }

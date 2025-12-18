@@ -37,7 +37,7 @@ const menuItems = [
 
 export function AppSidebar() {
   const { state } = useSidebar();
-  const { profile } = useAuth();
+  const { user } = useAuth();
   const collapsed = state === "collapsed";
 
   return (
@@ -89,22 +89,29 @@ export function AppSidebar() {
         </SidebarGroup>
 
         {/* User info at bottom with better design */}
-        {profile && (
+        {user && (
           <div className="mt-auto p-4 border-t border-white/10">
             {!collapsed ? (
               <div className="flex items-center gap-3 p-3 rounded-lg bg-white/10 backdrop-blur-sm hover:bg-white/15 transition-colors">
                 <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-bold shadow-md">
-                  {profile.full_name.charAt(0).toUpperCase()}
+                  {(user.firstName?.charAt(0) || user.username?.charAt(0) || 'U').toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-white truncate">{profile.full_name}</p>
-                  <p className="text-xs text-white/70 truncate capitalize">{profile.role}</p>
+                  <p className="text-sm font-semibold text-white truncate">
+                    {user.firstName && user.lastName
+                      ? `${user.firstName} ${user.lastName}`
+                      : user.username || 'Usuario'
+                    }
+                  </p>
+                  <p className="text-xs text-white/70 truncate capitalize">
+                    {user.groups?.[0] || 'Usuario'}
+                  </p>
                 </div>
               </div>
             ) : (
               <div className="flex justify-center">
                 <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-bold shadow-md">
-                  {profile.full_name.charAt(0).toUpperCase()}
+                  {(user.firstName?.charAt(0) || user.username?.charAt(0) || 'U').toUpperCase()}
                 </div>
               </div>
             )}

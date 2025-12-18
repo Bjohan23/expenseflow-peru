@@ -64,8 +64,10 @@ export interface AuthState {
 
 // Authentication context value
 export interface AuthContextValue extends AuthState {
-  login: (credentials: LoginCredentials) => Promise<void>;
-  logout: () => void;
-  refreshToken: () => Promise<void>;
+  login: (credentials: LoginCredentials) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
+  refreshToken: () => Promise<string>;
   clearError: () => void;
+  hasRole: (role: string) => boolean;
+  hasAnyRole: (roles: string[]) => boolean;
 }
