@@ -16,7 +16,7 @@ import { useEstadisticasGastos } from "@/hooks/useGastos";
 import { KPICard } from "@/components/common/KPICard";
 import { LoadingSkeleton } from "@/components/common/LoadingSkeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { supabase } from "@/lib/supabase";
+// TODO: Migrate to new API service - import { supabase } from "@/lib/supabase";
 import { formatCurrency } from "@/lib/format";
 import {
   BarChart,

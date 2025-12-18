@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Building2, Plus, Pencil, DollarSign, CheckCircle } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+// TODO: Migrate to new API service - import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { LoadingSkeleton } from "@/components/common/LoadingSkeleton";
 import { StatusBadge } from "@/components/common/StatusBadge";

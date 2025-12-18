@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
+// TODO: Migrate to new API service - import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { SearchInput } from "@/components/common/SearchInput";
 import { TablePagination } from "@/components/common/TablePagination";

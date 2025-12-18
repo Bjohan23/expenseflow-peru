@@ -5,7 +5,7 @@ import { OCRUpload } from "@/components/ocr/OCRUpload";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { supabase } from "@/lib/supabase";
+// TODO: Migrate to new API service - import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import type { DatosOCRExtraidos } from "@/types/gastos-documentos";
 

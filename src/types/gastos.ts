@@ -3,7 +3,7 @@
  * Tipos y interfaces para gastos con flujo de aprobación
  */
 
-import { Database } from "@/integrations/supabase/types";
+// TODO: Migrate to new API service - import { Database } from "@/integrations/supabase/types";
 
 // =====================================================
 // TIPOS BASE DE LA BASE DE DATOS

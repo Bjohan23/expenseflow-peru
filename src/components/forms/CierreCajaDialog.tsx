@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
+// TODO: Migrate to new API service - import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
