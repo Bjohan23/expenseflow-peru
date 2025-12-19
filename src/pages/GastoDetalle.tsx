@@ -22,6 +22,7 @@ import {
   Ban,
 } from 'lucide-react';
 import { treasuryService } from '@/services/treasury.service';
+import { mocksService } from '@/services/mocks.service';
 import { Gasto, Evidencia, EstadoGasto, PagadoPor } from '@/types/treasury';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,14 +37,14 @@ import { toast } from 'sonner';
 import { LoadingSkeleton } from '@/components/common/LoadingSkeleton';
 import { useAuth } from '@/contexts/AuthContext';
 
-// Estado configuration
+// Estado configuration - usar strings para compatibilidad con mock service
 const ESTADO_CONFIG = {
-  [EstadoGasto.BORRADOR]: { label: 'Borrador', color: 'bg-gray-100 text-gray-800' },
-  [EstadoGasto.PENDIENTE]: { label: 'Pendiente de Aprobación', color: 'bg-yellow-100 text-yellow-800' },
-  [EstadoGasto.APROBADO]: { label: 'Aprobado', color: 'bg-green-100 text-green-800' },
-  [EstadoGasto.PAGADO]: { label: 'Pagado', color: 'bg-blue-100 text-blue-800' },
-  [EstadoGasto.RECHAZADO]: { label: 'Rechazado', color: 'bg-red-100 text-red-800' },
-  [EstadoGasto.ANULADO]: { label: 'Anulado', color: 'bg-gray-100 text-gray-600' },
+  'borrador': { label: 'Borrador', color: 'bg-gray-100 text-gray-800' },
+  'pendiente': { label: 'Pendiente de Aprobación', color: 'bg-yellow-100 text-yellow-800' },
+  'aprobado': { label: 'Aprobado', color: 'bg-green-100 text-green-800' },
+  'pagado': { label: 'Pagado', color: 'bg-blue-100 text-blue-800' },
+  'rechazado': { label: 'Rechazado', color: 'bg-red-100 text-red-800' },
+  'anulado': { label: 'Anulado', color: 'bg-gray-100 text-gray-600' },
 };
 
 export default function GastoDetalle() {
@@ -63,13 +64,49 @@ export default function GastoDetalle() {
   // Queries
   const { data: gasto, isLoading, error } = useQuery({
     queryKey: ['gasto', id],
-    queryFn: () => treasuryService.getGastoById(id!),
+    queryFn: () => mocksService.getGastoById(id!),
     enabled: !!id,
+    select: (mockGasto) => {
+      // Obtener nombres reales en lugar de IDs
+      const empresa = mocksService.getEmpresaById(mockGasto.empresa);
+      const responsable = mocksService.getResponsableById(mockGasto.responsable);
+      const categoria = mocksService.getCategoriaById(mockGasto.categoria);
+
+      // Convertir mock gasto al formato esperado por GastoDetalle
+      return {
+        ...mockGasto,
+        id: mockGasto.gastoId,
+        gasto_id: mockGasto.gastoId,
+        codigo: mockGasto.gastoId,
+        usuario_id: mockGasto.responsable, // Usar responsable como usuario_id
+        fecha_gasto: mockGasto.fecha_documento,
+        categoria_gasto_nombre: categoria ? categoria.nombre_categoria : mockGasto.categoria,
+        descripcion: mockGasto.glosa,
+        observaciones: null,
+        moneda: mockGasto.moneda || 'PEN',
+        responsable_pago: false,
+        numero_operacion: null,
+        responsable_pago_nombre: null,
+        empresa_nombre: empresa ? empresa.razon_social : mockGasto.empresa,
+        sucursal_nombre: mockGasto.sucursal || 'No asignada',
+        caja_nombre: null,
+        centro_costo_nombre: null,
+        usuario_nombre: responsable ? responsable.nombre_completo : mockGasto.responsable,
+        usuario_email: responsable ? responsable.email : mockGasto.responsable + '@ejemplo.com',
+        created_at: mockGasto.created_at,
+        updated_at: mockGasto.created_at,
+        motivo_rechazo: null,
+        motivo_anulacion: null,
+        // Campos adicionales para compatibilidad
+        items: mockGasto.items || [],
+        imagenes: mockGasto.imagenes || []
+      } as any;
+    },
   });
 
   const { data: evidenciasData, isLoading: evidenciasLoading } = useQuery({
     queryKey: ['evidencias', id],
-    queryFn: () => treasuryService.getEvidencias(id!),
+    queryFn: () => mocksService.getEvidencias(id!),
     enabled: !!id,
   });
 
@@ -161,8 +198,10 @@ export default function GastoDetalle() {
     window.open(evidencia.archivo_url, '_blank');
   };
 
-  const formatCurrency = (amount: string, currency: string) => {
-    const num = parseFloat(amount);
+  const formatCurrency = (amount: string | number, currency: string) => {
+    const num = typeof amount === 'number' ? amount : parseFloat(amount);
+    if (isNaN(num)) return 'S/. 0.00';
+
     return new Intl.NumberFormat('es-PE', {
       style: 'currency',
       currency: currency === 'USD' ? 'USD' : currency === 'EUR' ? 'EUR' : 'PEN',
@@ -193,10 +232,10 @@ export default function GastoDetalle() {
   };
 
   // Check if user can approve based on permissions
-  const canApprove = gasto?.estado === EstadoGasto.PENDIENTE &&
+  const canApprove = gasto?.estado === 'pendiente' &&
     user?.role && ['aprobador', 'responsable', 'admin'].includes(user.role);
 
-  const canEdit = gasto?.estado === EstadoGasto.BORRADOR &&
+  const canEdit = gasto?.estado === 'borrador' &&
     (gasto.usuario_id === user?.id || ['responsable', 'admin'].includes(user?.role || ''));
 
   if (isLoading) {
@@ -223,8 +262,9 @@ export default function GastoDetalle() {
     );
   }
 
-  const estadoConfig = ESTADO_CONFIG[gasto.estado as EstadoGasto];
+  const estadoConfig = ESTADO_CONFIG[gasto.estado as keyof typeof ESTADO_CONFIG] || ESTADO_CONFIG.borrador;
   const evidencias = evidenciasData?.evidencias || [];
+  const imagenes = gasto.imagenes || []; // Usar las imágenes del gasto
 
   return (
     <div className="space-y-6">
@@ -375,54 +415,49 @@ export default function GastoDetalle() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {evidenciasLoading ? (
-                <LoadingSkeleton type="table" count={2} />
-              ) : evidencias.length === 0 ? (
+              {imagenes.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                  <p>No hay evidencias adjuntas</p>
+                  <p>No hay imágenes adjuntas</p>
                 </div>
               ) : (
-                <div className="grid gap-4">
-                  {evidencias.map((evidencia) => (
-                    <div
-                      key={evidencia.evidencia_id}
-                      className="flex items-center justify-between p-4 border rounded-lg"
-                    >
-                      <div className="flex items-center gap-3">
-                        <FileText className="h-5 w-5 text-gray-400" />
-                        <div>
-                          <p className="font-medium">{evidencia.nombre_archivo}</p>
-                          <p className="text-sm text-gray-500">
-                            Subido el {format(new Date(evidencia.fecha_subida), 'dd/MM/yyyy HH:mm', { locale: es })}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => downloadEvidencia(evidencia)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => downloadEvidencia(evidencia)}
-                        >
-                          <Download className="h-4 w-4" />
-                        </Button>
-                        {(canEdit || user?.role === 'admin') && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {imagenes.map((imagen, index) => (
+                    <div key={imagen.id || index} className="border rounded-lg overflow-hidden">
+                      {/* Preview de la imagen */}
+                      <div className="aspect-square bg-gray-100 relative">
+                        <img
+                          src={imagen.data}
+                          alt={imagen.name || `Evidencia ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        {/* Overlay para el hover */}
+                        <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-50 transition-opacity flex items-center justify-center opacity-0 hover:opacity-100">
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleDeleteEvidencia(evidencia.evidencia_id)}
-                            disabled={deleteEvidenciaMutation.isLoading}
+                            className="text-white"
+                            onClick={() => window.open(imagen.data, '_blank')}
                           >
-                            <Trash2 className="h-4 w-4 text-red-500" />
+                            <Eye className="h-4 w-4" />
                           </Button>
-                        )}
+                        </div>
+                      </div>
+                      {/* Información de la imagen */}
+                      <div className="p-3">
+                        <p className="font-medium text-sm truncate" title={imagen.name}>
+                          {imagen.name || `Evidencia ${index + 1}`}
+                        </p>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-xs text-gray-500">
+                            {imagen.size ? `${(imagen.size / 1024).toFixed(1)} KB` : ''}
+                          </span>
+                          {imagen.timestamp && (
+                            <span className="text-xs text-gray-400">
+                              {new Date(imagen.timestamp).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -472,7 +507,7 @@ export default function GastoDetalle() {
                 </>
               )}
 
-              {[EstadoGasto.BORRADOR, EstadoGasto.PENDIENTE, EstadoGasto.APROBADO].includes(gasto.estado as EstadoGasto) && (
+              {['borrador', 'pendiente', 'aprobado'].includes(gasto.estado) && (
                 <Button
                   className="w-full"
                   variant="outline"
@@ -519,7 +554,7 @@ export default function GastoDetalle() {
           </Card>
 
           {/* Alertas */}
-          {gasto.estado === EstadoGasto.RECHAZADO && gasto.motivo_rechazo && (
+          {gasto.estado === 'rechazado' && gasto.motivo_rechazo && (
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
@@ -528,7 +563,7 @@ export default function GastoDetalle() {
             </Alert>
           )}
 
-          {gasto.estado === EstadoGasto.ANULADO && gasto.motivo_anulacion && (
+          {gasto.estado === 'anulado' && gasto.motivo_anulacion && (
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>

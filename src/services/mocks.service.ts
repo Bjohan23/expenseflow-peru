@@ -11,6 +11,15 @@ export interface TipoDocumento {
   isPredefined?: boolean;
 }
 
+// ===== CATEGORÍAS =====
+export interface Categoria {
+  id: string;
+  nombre_categoria: string;
+  descripcion_categoria: string;
+  created_at: string;
+  isPredefined?: boolean;
+}
+
 // ===== RESPONSABLES =====
 export interface Responsable {
   id: string;
@@ -50,6 +59,30 @@ export interface Fondo {
   fecha_asignacion: string;
   created_at: string;
   isPredefined?: boolean;
+}
+
+// ===== GASTOS =====
+export interface MockGasto {
+  gastoId: string;
+  empresa: string;
+  sucursal: string;
+  categoria: string;
+  responsable: string;
+  glosa: string;
+  importe: number;
+  pagado_por: number;
+  reembolsable: boolean;
+  fondo: string;
+  tipo_documento: string;
+  nro_documento: string;
+  fecha_documento: string;
+  ruc_emisor: string;
+  nombre_emisor: string;
+  items: any[]; // Usar any[] para que sea compatible con GastoItem[]
+  imagenes: any[]; // Array de imágenes asociadas al gasto
+  estado: string; // Para compatibilidad con GastoDetalle
+  moneda: string; // Para compatibilidad con GastoDetalle
+  created_at: string;
 }
 
 // ===== DATOS PREDEFINIDOS =====
@@ -127,6 +160,209 @@ export const TIPOS_DOCUMENTO_PREDEFINIDOS: Omit<TipoDocumento, 'created_at'>[] =
     codigo: 'COMPROBANTE_PAGO',
     longitud_max_nro: 20,
     longitud_max_ruc: 0,
+    isPredefined: true
+  }
+];
+
+// Datos predefinidos de gastos
+export const GASTOS_PREDEFINIDOS: Omit<MockGasto, 'created_at'>[] = [
+  {
+    gastoId: 'gasto_001',
+    empresa: '01',
+    sucursal: '0101',
+    categoria: '550e8400-e29b-41d4-a716-446655440001', // Viáticos y Transporte
+    responsable: '660e8400-e29b-41d4-a716-446655440001', // Juan Carlos Pérez
+    glosa: 'Viáticos para viaje de negocios a Piura',
+    importe: 850.50,
+    pagado_por: 1,
+    reembolsable: true,
+    fondo: 'fondo_001',
+    tipo_documento: 'FACTURA',
+    nro_documento: 'F001-001234',
+    fecha_documento: '2024-12-15',
+    ruc_emisor: '20555555555',
+    nombre_emisor: 'Transportes速 S.A.C.',
+    items: [
+      {
+        nro_item: 1,
+        descripcion_item: 'Pasajes terrestres Lima-Piura',
+        cantidad: 2,
+        precio_unitario: 280.00,
+        total_item: 560.00
+      },
+      {
+        nro_item: 2,
+        descripcion_item: 'Alimentación durante viaje',
+        cantidad: 3,
+        precio_unitario: 96.83,
+        total_item: 290.50
+      }
+    ],
+    imagenes: [],
+    estado: 'aprobado',
+    moneda: 'PEN'
+  },
+  {
+    gastoId: 'gasto_002',
+    empresa: '02',
+    sucursal: '0201',
+    categoria: '550e8400-e29b-41d4-a716-446655440004', // Suministros y Materiales
+    responsable: '660e8400-e29b-41d4-a716-446655440002', // María López
+    glosa: 'Compra de útiles de oficina',
+    importe: 375.80,
+    pagado_por: 2,
+    reembolsable: false,
+    fondo: 'none',
+    tipo_documento: 'BOLETA',
+    nro_documento: 'B001-000567',
+    fecha_documento: '2024-12-10',
+    ruc_emisor: '20123456789',
+    nombre_emisor: 'Office Depot Perú S.A.',
+    items: [
+      {
+        nro_item: 1,
+        descripcion_item: 'Resmas de papel A4',
+        cantidad: 5,
+        precio_unitario: 45.00,
+        total_item: 225.00
+      },
+      {
+        nro_item: 2,
+        descripcion_item: 'Cartuchos de tinta negra',
+        cantidad: 2,
+        precio_unitario: 75.40,
+        total_item: 150.80
+      }
+    ],
+    imagenes: [],
+    estado: 'pagado',
+    moneda: 'PEN'
+  },
+  {
+    gastoId: 'gasto_003',
+    empresa: '01',
+    sucursal: '0105',
+    categoria: '550e8400-e29b-41d4-a716-446655440003', // Hospedaje
+    responsable: '660e8400-e29b-41d4-a716-446655440003', // Carlos Rodríguez
+    glosa: 'Alojamiento en hotel para capacitación',
+    importe: 580.00,
+    pagado_por: 1,
+    reembolsable: true,
+    fondo: 'fondo_002',
+    tipo_documento: 'FACTURA',
+    nro_documento: 'F001-001235',
+    fecha_documento: '2024-12-08',
+    ruc_emisor: '20387654321',
+    nombre_emisor: 'Hotel Comfort Inn S.A.',
+    items: [
+      {
+        nro_item: 1,
+        descripcion_item: 'Habitación doble - 2 noches',
+        cantidad: 2,
+        precio_unitario: 290.00,
+        total_item: 580.00
+      }
+    ],
+    imagenes: [],
+    estado: 'pendiente',
+    moneda: 'PEN'
+  },
+  {
+    gastoId: 'gasto_004',
+    empresa: '03',
+    sucursal: '0301',
+    categoria: '550e8400-e29b-41d4-a716-446655440004', // Suministros y Materiales
+    responsable: '660e8400-e29b-41d4-a716-446655440001', // Juan Carlos Pérez
+    glosa: 'Servicios de mantenimiento de equipos',
+    importe: 1200.00,
+    pagado_por: 3,
+    reembolsable: false,
+    fondo: 'none',
+    tipo_documento: 'FACTURA',
+    nro_documento: 'F001-001236',
+    fecha_documento: '2024-12-05',
+    ruc_emisor: '20456789012',
+    nombre_emisor: 'Mantenimiento Pro S.A.C.',
+    items: [
+      {
+        nro_item: 1,
+        descripcion_item: 'Mantenimiento preventivo equipos de cómputo',
+        cantidad: 1,
+        precio_unitario: 1200.00,
+        total_item: 1200.00
+      }
+    ],
+    imagenes: [],
+    estado: 'borrador',
+    moneda: 'PEN'
+  },
+  {
+    gastoId: 'gasto_005',
+    empresa: '02',
+    sucursal: '0203',
+    categoria: '550e8400-e29b-41d4-a716-446655440005', // Comunicaciones
+    responsable: '660e8400-e29b-41d4-a716-446655440004', // Ana Martínez
+    glosa: 'Servicios de internet y telefonía',
+    importe: 450.30,
+    pagado_por: 3,
+    reembolsable: false,
+    fondo: 'none',
+    tipo_documento: 'RECIBO_HONORARIOS',
+    nro_documento: 'R-001-12345',
+    fecha_documento: '2024-12-01',
+    ruc_emisor: '20567890123',
+    nombre_emisor: 'Claro Perú S.A.',
+    items: [
+      {
+        nro_item: 1,
+        descripcion_item: 'Servicios de internet - Diciembre 2024',
+        cantidad: 1,
+        precio_unitario: 280.00,
+        total_item: 280.00
+      },
+      {
+        nro_item: 2,
+        descripcion_item: 'Plan celular empresarial',
+        cantidad: 2,
+        precio_unitario: 85.15,
+        total_item: 170.30
+      }
+    ],
+    imagenes: [],
+    estado: 'pagado',
+    moneda: 'PEN'
+  }
+];
+
+export const CATEGORIAS_PREDEFINIDAS: Omit<Categoria, 'created_at'>[] = [
+  {
+    id: '550e8400-e29b-41d4-a716-446655440001',
+    nombre_categoria: 'Viáticos y Movilidad',
+    descripcion_categoria: 'Gastos de transporte, alimentación y alojamiento por viajes de trabajo',
+    isPredefined: true
+  },
+  {
+    id: '550e8400-e29b-41d4-a716-446655440002',
+    nombre_categoria: 'Suministros y Materiales',
+    descripcion_categoria: 'Compras de insumos, materiales de oficina y herramientas',
+    isPredefined: true
+  },
+  {
+    id: '550e8400-e29b-41d4-a716-446655440003',
+    nombre_categoria: 'Servicios Profesionales',
+    descripcion_categoria: 'Honorarios de consultores, asesores y servicios profesionales',
+    isPredefined: true
+  },
+  {
+    id: '550e8400-e29b-41d4-a716-446655440004',
+    nombre_categoria: 'Gastos Administrativos',
+    descripcion_categoria: 'Alquiler, servicios básicos, mantenimiento y otros gastos administrativos',
+    isPredefined: true
+  },
+  {
+    id: '550e8400-e29b-41d4-a716-446655440005',
+    nombre_categoria: 'Marketing y Publicidad',
+    descripcion_categoria: 'Publicidad, promoción, eventos y actividades de marketing',
     isPredefined: true
   }
 ];
@@ -247,6 +483,7 @@ class MocksService {
   private readonly RESPONSABLES_KEY = 'expenseflow_responsables';
   private readonly FONDOS_KEY = 'expenseflow_fondos';
   private readonly GASTOS_KEY = 'expenseflow_gastos';
+  private readonly CATEGORIAS_KEY = 'expenseflow_categorias';
 
   constructor() {
     this.initializeData();
@@ -255,8 +492,10 @@ class MocksService {
   private initializeData() {
     this.initializeEmpresas();
     this.initializeTiposDocumento();
+    this.initializeCategorias();
     this.initializeResponsables();
     this.initializeFondos();
+    this.initializeGastos();
   }
 
   private initializeEmpresas() {
@@ -278,6 +517,17 @@ class MocksService {
         created_at: new Date().toISOString()
       }));
       localStorage.setItem(this.TIPOS_DOCUMENTO_KEY, JSON.stringify(tiposConTimestamp));
+    }
+  }
+
+  private initializeCategorias() {
+    const categoriasGuardadas = this.getCategoriasFromStorage();
+    if (categoriasGuardadas.length === 0) {
+      const categoriasConTimestamp = CATEGORIAS_PREDEFINIDAS.map(categoria => ({
+        ...categoria,
+        created_at: new Date().toISOString()
+      }));
+      localStorage.setItem(this.CATEGORIAS_KEY, JSON.stringify(categoriasConTimestamp));
     }
   }
 
@@ -303,6 +553,17 @@ class MocksService {
     }
   }
 
+  private initializeGastos() {
+    const gastosGuardados = this.getGastosFromStorage();
+    if (gastosGuardados.length === 0) {
+      const gastosConTimestamp = GASTOS_PREDEFINIDOS.map(gasto => ({
+        ...gasto,
+        created_at: new Date().toISOString()
+      }));
+      localStorage.setItem(this.GASTOS_KEY, JSON.stringify(gastosConTimestamp));
+    }
+  }
+
   private getEmpresasFromStorage(): Empresa[] {
     try {
       const data = localStorage.getItem(this.EMPRESAS_KEY);
@@ -323,6 +584,16 @@ class MocksService {
     }
   }
 
+  private getCategoriasFromStorage(): Categoria[] {
+    try {
+      const data = localStorage.getItem(this.CATEGORIAS_KEY);
+      return data ? JSON.parse(data) : [];
+    } catch (error) {
+      console.error('Error al obtener categorías:', error);
+      return [];
+    }
+  }
+
   private getResponsablesFromStorage(): Responsable[] {
     try {
       const data = localStorage.getItem(this.RESPONSABLES_KEY);
@@ -339,6 +610,16 @@ class MocksService {
       return data ? JSON.parse(data) : [];
     } catch (error) {
       console.error('Error al obtener fondos:', error);
+      return [];
+    }
+  }
+
+  private getGastosFromStorage(): MockGasto[] {
+    try {
+      const data = localStorage.getItem(this.GASTOS_KEY);
+      return data ? JSON.parse(data) : [];
+    } catch (error) {
+      console.error('Error al obtener gastos:', error);
       return [];
     }
   }
@@ -429,6 +710,16 @@ class MocksService {
   getTipoDocumentoByCodigo(codigo: string): TipoDocumento | null {
     const tipos = this.getTiposDocumentoFromStorage();
     return tipos.find(tipo => tipo.codigo === codigo) || null;
+  }
+
+  // ===== CATEGORÍAS =====
+  getCategorias(): Categoria[] {
+    return this.getCategoriasFromStorage();
+  }
+
+  getCategoriaById(id: string): Categoria | null {
+    const categorias = this.getCategoriasFromStorage();
+    return categorias.find(categoria => categoria.id === id) || null;
   }
 
   createTipoDocumento(data: Omit<TipoDocumento, 'id' | 'created_at'>): TipoDocumento {
@@ -628,6 +919,57 @@ class MocksService {
       console.error('Error al guardar fondos:', error);
       throw new Error('No se pudieron guardar los fondos');
     }
+  }
+
+  private saveGastosToStorage(gastos: MockGasto[]) {
+    try {
+      localStorage.setItem(this.GASTOS_KEY, JSON.stringify(gastos));
+    } catch (error) {
+      console.error('Error al guardar gastos:', error);
+      throw new Error('No se pudieron guardar los gastos');
+    }
+  }
+
+  // ===== GASTOS =====
+  getGastos(): MockGasto[] {
+    return this.getGastosFromStorage();
+  }
+
+  getGastoById(gastoId: string): MockGasto | null {
+    const gastos = this.getGastosFromStorage();
+    return gastos.find(gasto => gasto.gastoId === gastoId) || null;
+  }
+
+  createGasto(data: Omit<MockGasto, 'gastoId' | 'created_at'>): MockGasto {
+    const gastos = this.getGastosFromStorage();
+
+    const nuevoGasto: MockGasto = {
+      gastoId: 'gasto_' + Date.now().toString(36),
+      ...data,
+      estado: data.estado || 'borrador', // Usar el estado del data o el por defecto
+      moneda: data.moneda || 'PEN', // Usar la moneda del data o la por defecto
+      imagenes: data.imagenes || [], // Inicializar array de imágenes
+      created_at: new Date().toISOString()
+    };
+
+    gastos.push(nuevoGasto);
+    this.saveGastosToStorage(gastos);
+
+    return nuevoGasto;
+  }
+
+  getEvidencias(gastoId: string): { gasto_id: string; evidencias: any[] } {
+    const gasto = this.getGastoById(gastoId);
+    if (!gasto) {
+      throw new Error('Gasto no encontrado');
+    }
+
+    // Por ahora, devolver un array vacío de evidencias
+    // Esto se puede implementar más tarde si se necesita
+    return {
+      gasto_id: gastoId,
+      evidencias: []
+    };
   }
 
   // ===== UTILIDADES =====

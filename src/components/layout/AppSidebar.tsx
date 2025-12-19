@@ -30,15 +30,15 @@ const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Empresas", url: "/empresas", icon: Building2 },
   { title: "Sucursales", url: "/sucursales", icon: MapPin },
-  { title: "Centros de Costo", url: "/centros-costo", icon: CreditCard },
-  { title: "Conceptos de Gasto", url: "/conceptos-gasto", icon: DollarSign },
+  // { title: "Centros de Costo", url: "/centros-costo", icon: CreditCard },
+  // { title: "Conceptos de Gasto", url: "/conceptos-gasto", icon: DollarSign },
   { title: "Categorías y Conceptos", url: "/categorias-conceptos", icon: FolderPlus },
   { title: "Gastos", url: "/gastos", icon: Receipt },
   { title: "Asignaciones de Fondo", url: "/asignaciones-fondo", icon: Wallet },
   { title: "Aprobaciones", url: "/aprobaciones", icon: CheckCircle },
   { title: "Cajas", url: "/cajas", icon: FileText },
-  { title: "Usuarios", url: "/usuarios", icon: UserCog },
-  { title: "Usuarios por Empresa", url: "/empresa-usuarios", icon: Users },
+  // { title: "Usuarios", url: "/usuarios", icon: UserCog },
+  // { title: "Usuarios por Empresa", url: "/empresa-usuarios", icon: Users },
 ];
 
 export function AppSidebar() {

@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Filter, Download, RefreshCw, Eye, Calendar, DollarSign, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
 import { treasuryService } from '@/services/treasury.service';
+import { mocksService } from '@/services/mocks.service';
 import { Gasto, GastosFilters, EstadoGasto, GastosStatistics } from '@/types/treasury';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,14 +37,14 @@ import { toast } from 'sonner';
 import { LoadingSkeleton } from '@/components/common/LoadingSkeleton';
 import { useAuth } from '@/contexts/AuthContext';
 
-// Constantes para estados
+// Constantes para estados - usar strings para compatibilidad con mock service
 const ESTADOS_GASTO = {
-  [EstadoGasto.BORRADOR]: { label: 'Borrador', color: 'bg-gray-100 text-gray-800' },
-  [EstadoGasto.PENDIENTE]: { label: 'Pendiente', color: 'bg-yellow-100 text-yellow-800' },
-  [EstadoGasto.APROBADO]: { label: 'Aprobado', color: 'bg-green-100 text-green-800' },
-  [EstadoGasto.PAGADO]: { label: 'Pagado', color: 'bg-blue-100 text-blue-800' },
-  [EstadoGasto.RECHAZADO]: { label: 'Rechazado', color: 'bg-red-100 text-red-800' },
-  [EstadoGasto.ANULADO]: { label: 'Anulado', color: 'bg-gray-100 text-gray-600' },
+  'borrador': { label: 'Borrador', color: 'bg-gray-100 text-gray-800' },
+  'pendiente': { label: 'Pendiente', color: 'bg-yellow-100 text-yellow-800' },
+  'aprobado': { label: 'Aprobado', color: 'bg-green-100 text-green-800' },
+  'pagado': { label: 'Pagado', color: 'bg-blue-100 text-blue-800' },
+  'rechazado': { label: 'Rechazado', color: 'bg-red-100 text-red-800' },
+  'anulado': { label: 'Anulado', color: 'bg-gray-100 text-gray-600' },
 };
 
 export default function Gastos() {
@@ -67,28 +68,59 @@ export default function Gastos() {
     refetch: refetchGastos,
   } = useQuery({
     queryKey: ['gastos', filters],
-    queryFn: () => treasuryService.getGastos(filters),
+    queryFn: () => mocksService.getGastos(),
     keepPreviousData: true,
+    select: (mockGastos) => {
+      // Debug removido - los datos ahora se transforman correctamente
+
+      // Transformar los datos del mock al formato que espera la tabla
+      return {
+        data: mockGastos.map(gasto => {
+          // Obtener nombres reales en lugar de IDs
+          const empresa = mocksService.getEmpresaById(gasto.empresa);
+          const responsable = mocksService.getResponsableById(gasto.responsable);
+          const categoria = mocksService.getCategoriaById(gasto.categoria);
+          const tipoDoc = mocksService.getTipoDocumentoByCodigo(gasto.tipo_documento);
+
+          const transformed = {
+            ...gasto,
+            gasto_id: gasto.gastoId,
+            fecha_gasto: gasto.fecha_documento,
+            categoria_nombre: categoria ? categoria.nombre_categoria : gasto.categoria,
+            tipo_documento_nombre: tipoDoc ? tipoDoc.nombre : gasto.tipo_documento,
+            responsable_nombre: responsable ? responsable.nombre_completo : gasto.responsable,
+            empresa_nombre: empresa ? empresa.razon_social : gasto.empresa,
+            sucursal_nombre: gasto.sucursal || 'N/A',
+            importe: gasto.importe.toString() // Convertir a string para formatCurrency
+          };
+
+          // Debug removido - transformación completada
+          return transformed;
+        }),
+        pagination: null // Los datos mock no tienen paginación
+      };
+    },
   });
 
-  const {
-    data: statisticsData,
-    isLoading: isLoadingStatistics,
-  } = useQuery({
-    queryKey: ['gastos-statistics', filters],
-    queryFn: () => treasuryService.getGastosStatistics({
-      empresa: filters.empresa,
-      sucursal: filters.sucursal,
-      fecha_inicio: filters.fecha_inicio,
-      fecha_fin: filters.fecha_fin,
-    }),
-  });
+  // TODO: Implementar estadísticas mock - deshabilitado por ahora
+  // const {
+  //   data: statisticsData,
+  //   isLoading: isLoadingStatistics,
+  // } = useQuery({
+  //   queryKey: ['gastos-statistics', filters],
+  //   queryFn: () => treasuryService.getGastosStatistics({
+  //     empresa: filters.empresa,
+  //     sucursal: filters.sucursal,
+  //     fecha_inicio: filters.fecha_inicio,
+  //     fecha_fin: filters.fecha_fin,
+  //   }),
+  // });
 
-  // Query para categorías (usado en filtros)
-  const { data: categoriasData } = useQuery({
-    queryKey: ['categorias-gasto-selector'],
-    queryFn: () => treasuryService.getCategoriasSelector(),
-  });
+  // TODO: Implementar categorías mock - deshabilitado por ahora
+  // const { data: categoriasData } = useQuery({
+  //   queryKey: ['categorias-gasto-selector'],
+  //   queryFn: () => treasuryService.getCategoriasSelector(),
+  // });
 
   // Mutations
   const aprobarMutation = useMutation({
@@ -145,13 +177,13 @@ export default function Gastos() {
     setActiveTab(tab);
     switch (tab) {
       case 'pendientes':
-        updateFilters({ estado: EstadoGasto.PENDIENTE });
+        updateFilters({ estado: 'pendiente' });
         break;
       case 'aprobados':
-        updateFilters({ estado: EstadoGasto.APROBADO });
+        updateFilters({ estado: 'aprobado' });
         break;
       case 'pagados':
-        updateFilters({ estado: EstadoGasto.PAGADO });
+        updateFilters({ estado: 'pagado' });
         break;
       default:
         const { estado, ...rest } = filters;
@@ -222,7 +254,7 @@ export default function Gastos() {
 
   const gastos = gastosData?.data || [];
   const pagination = gastosData?.pagination;
-  const statistics = statisticsData;
+  const statistics = null; // TODO: Implementar estadísticas mock
 
   return (
     <div className="space-y-6">
@@ -360,11 +392,7 @@ export default function Gastos() {
                 <SelectValue placeholder="Categoría" />
               </SelectTrigger>
               <SelectContent>
-                {categoriasData?.map((categoria) => (
-                  <SelectItem key={categoria.id} value={categoria.value}>
-                    {categoria.label}
-                  </SelectItem>
-                ))}
+                <SelectItem value="placeholder">Categorías (próximamente)</SelectItem>
               </SelectContent>
             </Select>
 
@@ -470,9 +498,9 @@ export default function Gastos() {
                           <TableCell>
                             <Badge
                               variant="outline"
-                              className={ESTADOS_GASTO[gasto.estado as EstadoGasto]?.color}
+                              className={ESTADOS_GASTO[gasto.estado as keyof typeof ESTADOS_GASTO]?.color || 'bg-gray-100 text-gray-800'}
                             >
-                              {ESTADOS_GASTO[gasto.estado as EstadoGasto]?.label}
+                              {ESTADOS_GASTO[gasto.estado as keyof typeof ESTADOS_GASTO]?.label || gasto.estado}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
@@ -484,7 +512,7 @@ export default function Gastos() {
                               >
                                 <Eye className="h-4 w-4" />
                               </Button>
-                              {gasto.estado === EstadoGasto.PENDIENTE && (
+                              {gasto.estado === 'pendiente' && (
                                 <>
                                   <Button
                                     variant="ghost"

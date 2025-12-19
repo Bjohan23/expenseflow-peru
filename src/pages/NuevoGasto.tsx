@@ -17,10 +17,10 @@ import {
 } from 'lucide-react';
 
 // Importar servicios mock
-import { categoriasService } from '@/services/categorias.service';
+import { mocksService } from '@/services/mocks.service';
 import { treasuryService } from '@/services/treasury.service';
 import { imageStorageService } from '@/services/images.service';
-import { ImageUploader } from '@/components/common/ImageUploader';
+import { TempImageUploader } from '@/components/common/TempImageUploader';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -89,13 +89,14 @@ export default function NuevoGasto() {
     }],
   });
 
-  // Imágenes
-  const [selectedImages, setSelectedImages] = useState<any[]>([]);
+  // Imágenes (archivos File temporales, no guardados)
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
 
   // Queries usando servicios mock
   const { data: categorias, isLoading: categoriasLoading } = useQuery({
     queryKey: ['categorias'],
-    queryFn: () => categoriasService.getCategorias(),
+    queryFn: () => mocksService.getCategorias(), // Cambiado a mocksService como responsable
+    enabled: true, // Siempre disponible como responsable pero sin depender de empresa
   });
 
   const { data: empresas, isLoading: empresasLoading } = useQuery({
@@ -104,8 +105,8 @@ export default function NuevoGasto() {
   });
 
   const { data: responsables, isLoading: responsablesLoading } = useQuery({
-    queryKey: ['responsables'],
-    queryFn: () => mocksService.getResponsables(),
+    queryKey: ['responsables', formData.empresa],
+    queryFn: () => mocksService.getResponsablesByEmpresa(formData.empresa),
     enabled: !!formData.empresa,
   });
 
@@ -132,15 +133,33 @@ export default function NuevoGasto() {
       // Simular llamada a API
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Generar ID de gasto simulado
-      const gastoId = 'gasto_' + Date.now().toString(36);
-
       // Simular error de validación
       if (!data.empresa) throw new Error('La empresa es requerida');
       if (!data.categoria) throw new Error('La categoría es requerida');
       if (!data.responsable) throw new Error('El responsable es requerido');
 
-      return { gastoId, ...data };
+      // Guardar las imágenes en localStorage solo ahora
+      const imagenesGuardadas = [];
+      for (const file of selectedImages) {
+        try {
+          const imagenInfo = await imageStorageService.saveImage(file, 'gastos');
+          imagenesGuardadas.push(imagenInfo);
+        } catch (error) {
+          console.error('Error al guardar imagen:', file.name, error);
+          // Continuar con las demás imágenes aunque una falle
+        }
+      }
+
+      // Guardar en el servicio mock incluyendo las imágenes ya guardadas
+      const gastoConImagenes = {
+        ...data,
+        imagenes: imagenesGuardadas,
+        estado: 'borrador', // Estado inicial
+        moneda: 'PEN' // Moneda por defecto
+      };
+      const savedGasto = mocksService.createGasto(gastoConImagenes);
+
+      return { gastoId: savedGasto.gastoId, ...savedGasto };
     },
     onSuccess: (gasto) => {
       toast.success('Gasto creado exitosamente');
@@ -196,7 +215,10 @@ export default function NuevoGasto() {
   };
 
   const handleInputChange = (field: keyof CreateGastoRequest, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   const handleItemChange = (index: number, field: keyof GastoItem, value: any) => {
@@ -248,10 +270,6 @@ export default function NuevoGasto() {
       items: itemsRenumerados,
       importe: nuevoImporte,
     }));
-  };
-
-  const handleImageSelect = (image: any) => {
-    setSelectedImages(prev => [...prev, image]);
   };
 
   const formatDateForInput = (date: string): string => {
@@ -342,20 +360,30 @@ export default function NuevoGasto() {
               <div>
                 <Label htmlFor="categoria">Categoría *</Label>
                 <Select
-                  value={formData.categoria}
-                  onValueChange={(value) => handleInputChange('categoria', value)}
+                  value={formData.categoria || ''}
+                  onValueChange={(value) => handleInputChange('categoria', value || '')}
+                  disabled={categoriasLoading || !categorias || categorias.length === 0}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar categoría" />
+                    <SelectValue placeholder={
+                      categoriasLoading ? "Cargando..." :
+                      !categorias || categorias.length === 0 ? "No hay categorías disponibles" :
+                      "Seleccionar categoría"
+                    } />
                   </SelectTrigger>
                   <SelectContent>
-                    {categorias?.map((categoria) => (
-                      <SelectItem key={categoria.categoria_id} value={categoria.categoria_id}>
+                    {categorias && categorias.length > 0 && categorias.map((categoria) => (
+                      <SelectItem key={categoria.id} value={categoria.id}>
                         {categoria.nombre_categoria}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {formData.categoria && categorias && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Categoría seleccionada: {categorias.find(c => c.id === formData.categoria)?.nombre_categoria}
+                  </p>
+                )}
               </div>
 
               {/* Responsable */}
@@ -416,9 +444,9 @@ export default function NuevoGasto() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">Efectivo</SelectItem>
-                    <SelectItem value="2">Tarjeta de Crédito</SelectItem>
-                    <SelectItem value="3">Transferencia</SelectItem>
+                    <SelectItem key="1" value="1">Efectivo</SelectItem>
+                    <SelectItem key="2" value="2">Tarjeta de Crédito</SelectItem>
+                    <SelectItem key="3" value="3">Transferencia</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -434,8 +462,8 @@ export default function NuevoGasto() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="true">Sí</SelectItem>
-                    <SelectItem value="false">No</SelectItem>
+                    <SelectItem key="true" value="true">Sí</SelectItem>
+                    <SelectItem key="false" value="false">No</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -452,7 +480,7 @@ export default function NuevoGasto() {
                     <SelectValue placeholder="Seleccionar fondo (opcional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">Sin fondo</SelectItem>
+                    <SelectItem value="none" key="none">Sin fondo</SelectItem>
                     {fondos?.map((fondo) => (
                       <SelectItem key={fondo.id} value={fondo.id}>
                         {fondo.nombre_fondo} - S/. {fondo.monto_disponible.toFixed(2)}
@@ -644,19 +672,18 @@ export default function NuevoGasto() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ImageUploader
+            <TempImageUploader
               onImagesChange={setSelectedImages}
               maxImages={3}
               maxSizeMB={5}
-              categoria="gastos"
-              multiple={true}
             />
             {selectedImages.length > 0 && (
-              <div className="mt-2 text-sm text-green-600">
+              <div className="mt-2 text-sm text-blue-600">
                 <Badge variant="outline" className="mr-2">
                   <Upload className="w-3 h-3 mr-1" />
-                  {selectedImages.length} imagen(es) subida(s)
+                  {selectedImages.length} imagen(es) seleccionada(s)
                 </Badge>
+                <span className="text-xs">Se guardarán al enviar el formulario</span>
               </div>
             )}
           </CardContent>
