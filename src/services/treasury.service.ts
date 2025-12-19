@@ -17,13 +17,18 @@ import {
   GastosStatistics,
   ValidateResponsableResponse
 } from '@/types/treasury';
+import { mocksService } from './mocks.service';
 
 class TreasuryService {
   private api: AxiosInstance;
+  public useMocks: boolean = false;
 
   constructor() {
     // Usar la URL correcta del .env o fallback a la producción
     const baseUrl = import.meta.env.VITE_API_URL || 'https://comercial.devsbee.com';
+
+    // Detectar si estamos en desarrollo o la URL no responde
+    this.useMocks = import.meta.env.DEV || !baseUrl || baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1');
 
     this.api = axios.create({
       baseURL: `${baseUrl}/api/v1/treasury`,
@@ -174,6 +179,37 @@ class TreasuryService {
     }
   }
 
+  // Helper methods para obtener nombres de entidades relacionadas
+  private getEmpresaNombre(empresaId: string): string {
+    const empresa = mocksService.getEmpresaById(empresaId);
+    return empresa?.razon_social || 'Empresa Desconocida';
+  }
+
+  private getSucursalNombre(sucursalId: string): string {
+    // Para las sucursales, usamos los datos predefinidos basados en el código
+    const sucursales: { [key: string]: string } = {
+      '0101': 'Matriz',
+      '0102': 'Sucursal 2',
+      '0103': 'Sucursal 3',
+      '0104': 'Sucursal 4',
+      '0105': 'Sucursal 5',
+      '0201': 'Sucursal A',
+      '0202': 'Sucursal B',
+      '0203': 'Sucursal C',
+      '0204': 'Sucursal D',
+      '0301': 'Sucursal X',
+      '0302': 'Sucursal Y',
+      '0303': 'Sucursal Z',
+      '0304': 'Sucursal W'
+    };
+    return sucursales[sucursalId] || 'Sucursal Desconocida';
+  }
+
+  private getResponsableNombre(responsableId: string): string {
+    const responsable = mocksService.getResponsableById(responsableId);
+    return responsable?.nombre_completo || 'Responsable Desconocido';
+  }
+
   // ===== CATEGORÍAS DE GASTO =====
   async getCategorias(params?: {
     page?: number;
@@ -266,6 +302,51 @@ class TreasuryService {
 
   // ===== GASTOS =====
   async getGastos(filters?: GastosFilters) {
+    // Usar mock service para gastos
+    if (this.useMocks) {
+      const gastos = mocksService.getGastos();
+
+      // Mapeo de estados (number -> string)
+      const estadoMap: { [key: number]: string } = {
+        1: 'borrador',
+        2: 'pendiente',
+        3: 'aprobado',
+        4: 'pagado',
+        5: 'rechazado',
+        6: 'anulado'
+      };
+
+      // Aplicar filtros si se proporcionan
+      let gastosFiltrados = gastos;
+      if (filters) {
+        if (filters.empresa) {
+          gastosFiltrados = gastosFiltrados.filter(g => g.empresa === filters.empresa);
+        }
+        if (filters.responsable) {
+          gastosFiltrados = gastosFiltrados.filter(g => g.responsable === filters.responsable);
+        }
+        if (filters.estado !== undefined) {
+          const estadoString = estadoMap[filters.estado];
+          if (estadoString) {
+            gastosFiltrados = gastosFiltrados.filter(g => g.estado === estadoString);
+          } else {
+            gastosFiltrados = []; // Si el estado no existe, no retornar resultados
+          }
+        }
+        if (filters.fecha_inicio) {
+          gastosFiltrados = gastosFiltrados.filter(g => g.fecha_documento >= filters.fecha_inicio!);
+        }
+        if (filters.fecha_fin) {
+          gastosFiltrados = gastosFiltrados.filter(g => g.fecha_documento <= filters.fecha_fin!);
+        }
+      }
+
+      return {
+        data: gastosFiltrados,
+        pagination: null
+      };
+    }
+
     const response = await this.api.get<PaginatedResponse<Gasto>>('/gastos/', { params: filters });
     return this.extractPaginatedData(response);
   }
@@ -329,6 +410,41 @@ class TreasuryService {
   }
 
   async searchAsignaciones(query: string, filters?: Partial<AsignacionesFilters>) {
+    // Usar mock service
+    if (this.useMocks) {
+      const asignaciones = mocksService.getAsignacionesFondo();
+
+      // Filtrar por query (buscar en empresa_nombre, sucursal_nombre, responsable_nombre)
+      let asignacionesFiltradas = asignaciones.filter(fondo => {
+        const searchLower = query.toLowerCase();
+        return (
+          fondo.empresa_nombre?.toLowerCase().includes(searchLower) ||
+          fondo.sucursal_nombre?.toLowerCase().includes(searchLower) ||
+          fondo.responsable_nombre?.toLowerCase().includes(searchLower) ||
+          fondo.tipo_fondo_display?.toLowerCase().includes(searchLower) ||
+          fondo.fondo_id.toLowerCase().includes(searchLower)
+        );
+      });
+
+      // Aplicar filtros adicionales
+      if (filters) {
+        if (filters.empresa) {
+          asignacionesFiltradas = asignacionesFiltradas.filter(f => f.empresa === filters.empresa);
+        }
+        if (filters.responsable) {
+          asignacionesFiltradas = asignacionesFiltradas.filter(f => f.responsable === filters.responsable);
+        }
+        if (filters.estado !== undefined) {
+          asignacionesFiltradas = asignacionesFiltradas.filter(f => f.estado === filters.estado);
+        }
+      }
+
+      return {
+        data: asignacionesFiltradas,
+        pagination: null
+      };
+    }
+
     const params = { q: query, ...filters };
     const response = await this.api.get<PaginatedResponse<AsignacionFondo>>('/asignaciones-fondo/search/', { params });
     return this.extractPaginatedData(response);
@@ -352,21 +468,86 @@ class TreasuryService {
 
   // ===== ASIGNACIONES DE FONDO =====
   async getAsignacionesFondo(filters?: AsignacionesFilters) {
+    // Usar mock service para asignaciones de fondos
+    if (this.useMocks) {
+      const asignaciones = mocksService.getAsignacionesFondo();
+
+      // Transformar datos para que coincidan con el tipo esperado
+      return {
+        data: asignaciones.map(fondo => ({
+          ...fondo,
+          empresa_nombre: this.getEmpresaNombre(fondo.empresa),
+          sucursal_nombre: this.getSucursalNombre(fondo.sucursal),
+          responsable_nombre: this.getResponsableNombre(fondo.responsable)
+        })),
+        pagination: null
+      };
+    }
+
     const response = await this.api.get<PaginatedResponse<AsignacionFondo>>('/asignaciones-fondo/', { params: filters });
     return this.extractPaginatedData(response);
   }
 
   async getAsignacionFondo(id: string) {
+    // Usar mock service
+    if (this.useMocks) {
+      const fondo = mocksService.getAsignacionFondoById(id);
+      if (!fondo) {
+        throw new Error('Asignación de fondo no encontrada');
+      }
+      return {
+        ...fondo,
+        empresa_nombre: this.getEmpresaNombre(fondo.empresa),
+        sucursal_nombre: this.getSucursalNombre(fondo.sucursal),
+        responsable_nombre: this.getResponsableNombre(fondo.responsable)
+      };
+    }
+
     const response = await this.api.get<ApiResponse<AsignacionFondo>>(`/asignaciones-fondo/${id}/`);
     return this.extractData(response);
   }
 
   async getAsignacionesPendientes(filters?: AsignacionesFilters) {
+    // Usar mock service
+    if (this.useMocks) {
+      const asignaciones = mocksService.getAsignacionesFondo();
+      const pendientes = asignaciones.filter(fondo => fondo.estado === 1 || fondo.estado === 2); // ASIGNADO o POR_RENDIR
+
+      return {
+        data: pendientes.map(fondo => ({
+          ...fondo,
+          empresa_nombre: this.getEmpresaNombre(fondo.empresa),
+          sucursal_nombre: this.getSucursalNombre(fondo.sucursal),
+          responsable_nombre: this.getResponsableNombre(fondo.responsable)
+        })),
+        pagination: null
+      };
+    }
+
     const response = await this.api.get<PaginatedResponse<AsignacionFondo>>('/asignaciones-fondo/pendientes/', { params: filters });
     return this.extractPaginatedData(response);
   }
 
   async getAsignacionesVencidas(filters?: AsignacionesFilters) {
+    // Usar mock service
+    if (this.useMocks) {
+      const asignaciones = mocksService.getAsignacionesFondo();
+      const hoy = new Date().toISOString().split('T')[0];
+      const vencidas = asignaciones.filter(fondo =>
+        fondo.fecha_vencimiento && fondo.fecha_vencimiento < hoy && fondo.estado !== 9 && fondo.estado !== 3
+      );
+
+      return {
+        data: vencidas.map(fondo => ({
+          ...fondo,
+          empresa_nombre: this.getEmpresaNombre(fondo.empresa),
+          sucursal_nombre: this.getSucursalNombre(fondo.sucursal),
+          responsable_nombre: this.getResponsableNombre(fondo.responsable)
+        })),
+        pagination: null
+      };
+    }
+
     const response = await this.api.get<PaginatedResponse<AsignacionFondo>>('/asignaciones-fondo/vencidos/', { params: filters });
     return this.extractPaginatedData(response);
   }
@@ -387,6 +568,11 @@ class TreasuryService {
       throw new Error('El monto asignado debe ser un número positivo');
     }
 
+    // Usar mock service
+    if (this.useMocks) {
+      return mocksService.createAsignacionFondo(data);
+    }
+
     const response = await this.api.post<ApiResponse<AsignacionFondo>>('/asignaciones-fondo/', data);
     return this.extractData(response);
   }
@@ -400,6 +586,31 @@ class TreasuryService {
   }
 
   async marcarPorRendir(fondoId: string) {
+    // Usar mock service
+    if (this.useMocks) {
+      const fondo = mocksService.getAsignacionFondoById(fondoId);
+      if (!fondo) {
+        throw new Error('Asignación de fondo no encontrada');
+      }
+
+      // Actualizar estado a POR_RENDIR (2)
+      const fondoActualizado = mocksService.updateAsignacionFondo(fondoId, {
+        estado: 2,
+        estado_display: 'Por Rendir'
+      });
+
+      if (!fondoActualizado) {
+        throw new Error('No se pudo actualizar el estado de la asignación');
+      }
+
+      return {
+        ...fondoActualizado,
+        empresa_nombre: this.getEmpresaNombre(fondoActualizado.empresa),
+        sucursal_nombre: this.getSucursalNombre(fondoActualizado.sucursal),
+        responsable_nombre: this.getResponsableNombre(fondoActualizado.responsable)
+      };
+    }
+
     const response = await this.api.post<ApiResponse<AsignacionFondo>>(`/asignaciones-fondo/${fondoId}/marcar-por-rendir/`);
     return this.extractData(response);
   }
@@ -409,16 +620,88 @@ class TreasuryService {
     comprobante_url?: string;
     observaciones?: string;
   }) {
+    // Usar mock service
+    if (this.useMocks) {
+      const fondo = mocksService.getAsignacionFondoById(fondoId);
+      if (!fondo) {
+        throw new Error('Asignación de fondo no encontrada');
+      }
+
+      // Calcular monto rendido sumando los gastos
+      let montoRendido = 0;
+      for (const gastoId of data.gastos_ids) {
+        const gasto = mocksService.getGastoById(gastoId);
+        if (gasto) {
+          montoRendido += parseFloat(gasto.importe);
+        }
+      }
+
+      // Actualizar fondo como rendido
+      const fondoActualizado = mocksService.updateAsignacionFondo(fondoId, {
+        estado: 3, // RENDIDO
+        estado_display: 'Rendido',
+        monto_rendido: montoRendido.toFixed(2),
+        saldo_pendiente: (parseFloat(fondo.monto_asignado) - montoRendido).toFixed(2),
+        observaciones: data.observaciones || fondo.observaciones
+      });
+
+      if (!fondoActualizado) {
+        throw new Error('No se pudo rendir la asignación');
+      }
+
+      return {
+        ...fondoActualizado,
+        empresa_nombre: this.getEmpresaNombre(fondoActualizado.empresa),
+        sucursal_nombre: this.getSucursalNombre(fondoActualizado.sucursal),
+        responsable_nombre: this.getResponsableNombre(fondoActualizado.responsable)
+      };
+    }
+
     const response = await this.api.post<ApiResponse<AsignacionFondo>>(`/asignaciones-fondo/${fondoId}/rendir/`, data);
     return this.extractData(response);
   }
 
   async anularAsignacionFondo(fondoId: string) {
+    // Usar mock service
+    if (this.useMocks) {
+      const fondo = mocksService.getAsignacionFondoById(fondoId);
+      if (!fondo) {
+        throw new Error('Asignación de fondo no encontrada');
+      }
+
+      // Intentar anular usando el método del mock service
+      const resultado = mocksService.anularAsignacionFondo(fondoId);
+      if (!resultado) {
+        throw new Error('No se pudo anular la asignación');
+      }
+
+      // Retornar el fondo actualizado
+      const fondoActualizado = mocksService.getAsignacionFondoById(fondoId);
+      if (!fondoActualizado) {
+        throw new Error('Error al recuperar la asignación actualizada');
+      }
+
+      return {
+        ...fondoActualizado,
+        empresa_nombre: this.getEmpresaNombre(fondoActualizado.empresa),
+        sucursal_nombre: this.getSucursalNombre(fondoActualizado.sucursal),
+        responsable_nombre: this.getResponsableNombre(fondoActualizado.responsable)
+      };
+    }
+
     const response = await this.api.post<ApiResponse<AsignacionFondo>>(`/asignaciones-fondo/${fondoId}/anular/`, {});
     return this.extractData(response);
   }
 
   async getGastosByAsignacionFondo(fondoId: string) {
+    // Usar mock service
+    if (this.useMocks) {
+      const gastos = mocksService.getGastos();
+      // Filtrar gastos que pertenezcan a esta asignación de fondo
+      const gastosAsignacion = gastos.filter(gasto => gasto.fondo === fondoId);
+      return gastosAsignacion;
+    }
+
     const response = await this.api.get<ApiResponse<Gasto[]>>(`/asignaciones-fondo/${fondoId}/gastos/`);
     return this.extractData(response);
   }
@@ -428,6 +711,11 @@ class TreasuryService {
     sucursal?: string;
     responsable?: string;
   }) {
+    // Usar mock service
+    if (this.useMocks) {
+      return mocksService.getAsignacionesStatistics();
+    }
+
     const response = await this.api.get<ApiResponse<{
       total_asignado: string;
       total_rendido: string;

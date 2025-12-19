@@ -278,35 +278,35 @@ export const Aprobaciones: React.FC = () => {
                           </div>
 
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
-                            <div>
+                            <div key="empresa">
                               <span className="font-medium">Empresa:</span>
                               <p>{gasto.empresa_nombre}</p>
                             </div>
-                            <div>
+                            <div key="sucursal">
                               <span className="font-medium">Sucursal:</span>
                               <p>{gasto.sucursal_nombre}</p>
                             </div>
-                            <div>
+                            <div key="responsable">
                               <span className="font-medium">Responsable:</span>
                               <p>{gasto.responsable_nombre}</p>
                             </div>
-                            <div>
+                            <div key="importe">
                               <span className="font-medium">Importe:</span>
                               <p className="font-semibold text-lg">{formatCurrency(gasto.importe)}</p>
                             </div>
-                            <div>
+                            <div key="fecha-gasto">
                               <span className="font-medium">Fecha Gasto:</span>
                               <p>{formatDate(gasto.fecha_gasto)}</p>
                             </div>
-                            <div>
+                            <div key="documento">
                               <span className="font-medium">Documento:</span>
                               <p>{gasto.tipo_documento_nombre} - {gasto.nro_documento}</p>
                             </div>
-                            <div>
+                            <div key="categoria">
                               <span className="font-medium">Categoría:</span>
                               <p>{gasto.categoria_nombre}</p>
                             </div>
-                            <div>
+                            <div key="items">
                               <span className="font-medium">Items:</span>
                               <p>{gasto.items_count || 0}</p>
                             </div>
@@ -394,24 +394,24 @@ export const Aprobaciones: React.FC = () => {
                           </div>
 
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
-                            <div>
+                            <div key="responsable">
                               <span className="font-medium">Responsable:</span>
                               <p>{fondo.responsable_nombre}</p>
                             </div>
-                            <div>
+                            <div key="tipo-fondo">
                               <span className="font-medium">Tipo Fondo:</span>
                               <p>{fondo.tipo_fondo_display}</p>
                             </div>
-                            <div>
+                            <div key="monto-asignado">
                               <span className="font-medium">Monto Asignado:</span>
                               <p className="font-semibold text-lg">{formatCurrency(fondo.monto_asignado)}</p>
                             </div>
-                            <div>
+                            <div key="fecha-asignacion">
                               <span className="font-medium">Fecha Asignación:</span>
                               <p>{formatDate(fondo.fecha_asignacion)}</p>
                             </div>
                             {fondo.fecha_vencimiento && (
-                              <div>
+                              <div key="fecha-vencimiento">
                                 <span className="font-medium">Fecha Vencimiento:</span>
                                 <p>{formatDate(fondo.fecha_vencimiento)}</p>
                               </div>

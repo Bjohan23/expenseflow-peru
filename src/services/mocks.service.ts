@@ -61,6 +61,29 @@ export interface Fondo {
   isPredefined?: boolean;
 }
 
+// ===== ASIGNACIONES DE FONDO =====
+export interface MockAsignacionFondo {
+  fondo_id: string;
+  empresa: string;
+  empresa_nombre?: string;
+  sucursal: string;
+  sucursal_nombre?: string;
+  responsable: string;
+  responsable_nombre?: string;
+  tipo_fondo: string;
+  tipo_fondo_display?: string;
+  monto_asignado: string;
+  monto_rendido?: string;
+  saldo_pendiente?: string;
+  fecha_asignacion: string;
+  fecha_vencimiento?: string;
+  estado: number; // Para compatibilidad con EstadoAsignacionFondo
+  estado_display?: string;
+  observaciones?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // ===== GASTOS =====
 export interface MockGasto {
   gastoId: string;
@@ -334,6 +357,136 @@ export const GASTOS_PREDEFINIDOS: Omit<MockGasto, 'created_at'>[] = [
   }
 ];
 
+// Datos predefinidos de asignaciones de fondos
+export const ASIGNACIONES_FONDOS_PREDEFINIDAS: Omit<MockAsignacionFondo, 'created_at' | 'updated_at'>[] = [
+  {
+    fondo_id: 'fondo_001',
+    empresa: '01',
+    sucursal: '0101',
+    responsable: '660e8400-e29b-41d4-a716-446655440001', // Juan Carlos Pérez
+    tipo_fondo: 'caja_chica',
+    tipo_fondo_display: 'Caja Chica',
+    monto_asignado: '5000.00',
+    monto_rendido: '2150.50',
+    saldo_pendiente: '2849.50',
+    fecha_asignacion: '2024-12-01',
+    fecha_vencimiento: '2024-12-31',
+    estado: 2, // POR_RENDIR
+    estado_display: 'Por Rendir',
+    observaciones: 'Fondo para gastos operativos del mes de diciembre',
+    created_at: new Date('2024-12-01T09:00:00').toISOString(),
+    updated_at: new Date('2024-12-15T14:30:00').toISOString()
+  },
+  {
+    fondo_id: 'fondo_002',
+    empresa: '02',
+    sucursal: '0201',
+    responsable: '660e8400-e29b-41d4-a716-446655440002', // María López
+    tipo_fondo: 'caja_grande',
+    tipo_fondo_display: 'Caja Grande',
+    monto_asignado: '15000.00',
+    monto_rendido: '12300.00',
+    saldo_pendiente: '2700.00',
+    fecha_asignacion: '2024-11-15',
+    fecha_vencimiento: '2024-12-15',
+    estado: 3, // RENDIDO
+    estado_display: 'Rendido',
+    observaciones: 'Fondo para proyecto de remodelación de oficinas',
+    created_at: new Date('2024-11-15T10:00:00').toISOString(),
+    updated_at: new Date('2024-12-10T16:45:00').toISOString()
+  },
+  {
+    fondo_id: 'fondo_003',
+    empresa: '01',
+    sucursal: '0105',
+    responsable: '660e8400-e29b-41d4-a716-446655440003', // Carlos Rodríguez
+    tipo_fondo: 'viaticos',
+    tipo_fondo_display: 'Viáticos',
+    monto_asignado: '8000.00',
+    monto_rendido: '0.00',
+    saldo_pendiente: '8000.00',
+    fecha_asignacion: '2024-12-10',
+    fecha_vencimiento: '2024-12-20',
+    estado: 1, // ASIGNADO
+    estado_display: 'Asignado',
+    observaciones: 'Viáticos para viaje de capacitación a Arequipa',
+    created_at: new Date('2024-12-10T11:30:00').toISOString(),
+    updated_at: new Date('2024-12-10T11:30:00').toISOString()
+  },
+  {
+    fondo_id: 'fondo_004',
+    empresa: '03',
+    sucursal: '0301',
+    responsable: '660e8400-e29b-41d4-a716-446655440004', // Ana Martínez
+    tipo_fondo: 'proyectos_especiales',
+    tipo_fondo_display: 'Proyectos Especiales',
+    monto_asignado: '25000.00',
+    monto_rendido: '18750.00',
+    saldo_pendiente: '6250.00',
+    fecha_asignacion: '2024-11-01',
+    fecha_vencimiento: '2025-01-31',
+    estado: 2, // POR_RENDIR
+    estado_display: 'Por Rendir',
+    observaciones: 'Fondo para implementación de nuevo sistema ERP',
+    created_at: new Date('2024-11-01T08:00:00').toISOString(),
+    updated_at: new Date('2024-12-05T17:20:00').toISOString()
+  },
+  {
+    fondo_id: 'fondo_005',
+    empresa: '02',
+    sucursal: '0203',
+    responsable: '660e8400-e29b-41d4-a716-446655440005', // Luis González
+    tipo_fondo: 'caja_chica',
+    tipo_fondo_display: 'Caja Chica',
+    monto_asignado: '3000.00',
+    monto_rendido: '3000.00',
+    saldo_pendiente: '0.00',
+    fecha_asignacion: '2024-11-20',
+    fecha_vencimiento: '2024-12-20',
+    estado: 3, // RENDIDO
+    estado_display: 'Rendido',
+    observaciones: 'Fondo para gastos de mantenimiento de almacén',
+    created_at: new Date('2024-11-20T09:15:00').toISOString(),
+    updated_at: new Date('2024-12-18T12:00:00').toISOString()
+  },
+  {
+    fondo_id: 'fondo_006',
+    empresa: '01',
+    sucursal: '0101',
+    responsable: '660e8400-e29b-41d4-a716-446655440006', // Patricia Silva
+    tipo_fondo: 'eventos',
+    tipo_fondo_display: 'Eventos',
+    monto_asignado: '12000.00',
+    monto_rendido: '0.00',
+    saldo_pendiente: '12000.00',
+    fecha_asignacion: '2024-12-16',
+    fecha_vencimiento: '2025-01-15',
+    estado: 1, // ASIGNADO
+    estado_display: 'Asignado',
+    observaciones: 'Fondo para evento corporativo de fin de año',
+    created_at: new Date('2024-12-16T10:45:00').toISOString(),
+    updated_at: new Date('2024-12-16T10:45:00').toISOString()
+  },
+  {
+    fondo_id: 'fondo_007',
+    empresa: '03',
+    sucursal: '0304',
+    responsable: '660e8400-e29b-41d4-a716-446655440007', // Roberto Vargas
+    tipo_fondo: 'caja_chica',
+    tipo_fondo_display: 'Caja Chica',
+    monto_asignado: '4500.00',
+    monto_rendido: '1200.80',
+    saldo_pendiente: '3299.20',
+    fecha_asignacion: '2024-12-05',
+    fecha_vencimiento: '2025-01-05',
+    estado: 9, // ANULADO
+    estado_display: 'Anulado',
+    observaciones: 'Anulado por cambio de responsable - fondos transferidos a nueva asignación',
+    created_at: new Date('2024-12-05T14:20:00').toISOString(),
+    updated_at: new Date('2024-12-14T09:30:00').toISOString()
+  }
+];
+
 export const CATEGORIAS_PREDEFINIDAS: Omit<Categoria, 'created_at'>[] = [
   {
     id: '550e8400-e29b-41d4-a716-446655440001',
@@ -484,6 +637,7 @@ class MocksService {
   private readonly FONDOS_KEY = 'expenseflow_fondos';
   private readonly GASTOS_KEY = 'expenseflow_gastos';
   private readonly CATEGORIAS_KEY = 'expenseflow_categorias';
+  private readonly ASIGNACIONES_FONDOS_KEY = 'expenseflow_asignaciones_fondos';
 
   constructor() {
     this.initializeData();
@@ -496,6 +650,7 @@ class MocksService {
     this.initializeResponsables();
     this.initializeFondos();
     this.initializeGastos();
+    this.initializeAsignacionesFondo();
   }
 
   private initializeEmpresas() {
@@ -561,6 +716,18 @@ class MocksService {
         created_at: new Date().toISOString()
       }));
       localStorage.setItem(this.GASTOS_KEY, JSON.stringify(gastosConTimestamp));
+    }
+  }
+
+  private initializeAsignacionesFondo() {
+    const asignacionesGuardadas = this.getAsignacionesFondoFromStorage();
+    if (asignacionesGuardadas.length === 0) {
+      const asignacionesConTimestamp = ASIGNACIONES_FONDOS_PREDEFINIDAS.map(asignacion => ({
+        ...asignacion,
+        created_at: asignacion.created_at,
+        updated_at: asignacion.updated_at
+      }));
+      localStorage.setItem(this.ASIGNACIONES_FONDOS_KEY, JSON.stringify(asignacionesConTimestamp));
     }
   }
 
@@ -928,6 +1095,145 @@ class MocksService {
       console.error('Error al guardar gastos:', error);
       throw new Error('No se pudieron guardar los gastos');
     }
+  }
+
+  // ===== ASIGNACIONES DE FONDO =====
+  private getAsignacionesFondoFromStorage(): MockAsignacionFondo[] {
+    try {
+      const data = localStorage.getItem(this.ASIGNACIONES_FONDOS_KEY);
+      return data ? JSON.parse(data) : [];
+    } catch (error) {
+      console.error('Error al obtener asignaciones de fondos:', error);
+      return [];
+    }
+  }
+
+  private saveAsignacionesFondoToStorage(asignaciones: MockAsignacionFondo[]) {
+    try {
+      localStorage.setItem(this.ASIGNACIONES_FONDOS_KEY, JSON.stringify(asignaciones));
+    } catch (error) {
+      console.error('Error al guardar asignaciones de fondos:', error);
+      throw new Error('No se pudieron guardar las asignaciones de fondos');
+    }
+  }
+
+  // Métodos públicos para asignaciones de fondo
+  getAsignacionesFondo(): MockAsignacionFondo[] {
+    return this.getAsignacionesFondoFromStorage();
+  }
+
+  getAsignacionFondoById(fondoId: string): MockAsignacionFondo | null {
+    const asignaciones = this.getAsignacionesFondoFromStorage();
+    return asignaciones.find(fondo => fondo.fondo_id === fondoId) || null;
+  }
+
+  createAsignacionFondo(data: {
+    empresa: string;
+    sucursal: string;
+    responsable: string;
+    tipo_fondo: string;
+    monto_asignado: string;
+    fecha_vencimiento: string;
+    observaciones?: string;
+  }): MockAsignacionFondo {
+    const asignaciones = this.getAsignacionesFondoFromStorage();
+
+    const nuevaAsignacion: MockAsignacionFondo = {
+      fondo_id: 'fondo_' + Date.now().toString(36),
+      ...data,
+      tipo_fondo_display: this.getTipoFondoDisplay(data.tipo_fondo),
+      monto_rendido: '0.00',
+      saldo_pendiente: data.monto_asignado,
+      fecha_asignacion: new Date().toISOString().split('T')[0],
+      estado: 1, // ASIGNADO
+      estado_display: 'Asignado',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    asignaciones.push(nuevaAsignacion);
+    this.saveAsignacionesFondoToStorage(asignaciones);
+
+    return nuevaAsignacion;
+  }
+
+  updateAsignacionFondo(fondoId: string, data: Partial<MockAsignacionFondo>): MockAsignacionFondo | null {
+    const asignaciones = this.getAsignacionesFondoFromStorage();
+    const index = asignaciones.findIndex(a => a.fondo_id === fondoId);
+
+    if (index === -1) return null;
+
+    // Actualizar datos
+    const asignacionActualizada = {
+      ...asignaciones[index],
+      ...data,
+      updated_at: new Date().toISOString()
+    };
+
+    asignaciones[index] = asignacionActualizada;
+    this.saveAsignacionesFondoToStorage(asignaciones);
+
+    return asignacionActualizada;
+  }
+
+  anularAsignacionFondo(fondoId: string): boolean {
+    const asignaciones = this.getAsignacionesFondoFromStorage();
+    const index = asignaciones.findIndex(fondo => fondo.fondo_id === fondoId);
+
+    if (index === -1) return false;
+
+    asignaciones[index] = {
+      ...asignaciones[index],
+      estado: 9, // ANULADO
+      estado_display: 'Anulado',
+      updated_at: new Date().toISOString()
+    };
+
+    this.saveAsignacionesFondoToStorage(asignaciones);
+    return true;
+  }
+
+  getAsignacionesStatistics(): {
+    total_asignado: string;
+    total_rendido: string;
+    saldo_pendiente: string;
+    fondos_pendientes: number;
+  } {
+    const asignaciones = this.getAsignacionesFondoFromStorage();
+
+    const total_asignado = asignaciones.reduce((total, fondo) =>
+      total + parseFloat(fondo.monto_asignado), 0
+    ).toFixed(2);
+
+    const total_rendido = asignaciones.reduce((total, fondo) =>
+      total + parseFloat(fondo.monto_rendido || '0'), 0
+    ).toFixed(2);
+
+    const saldo_pendiente = (parseFloat(total_asignado) - parseFloat(total_rendido)).toFixed(2);
+
+    const fondos_pendientes = asignaciones.filter(fondo =>
+      fondo.estado === 1 || fondo.estado === 2 // ASIGNADO o POR_RENDIR
+    ).length;
+
+    return {
+      total_asignado,
+      total_rendido,
+      saldo_pendiente,
+      fondos_pendientes
+    };
+  }
+
+  private getTipoFondoDisplay(tipo_fondo: string): string {
+    const tipos: { [key: string]: string } = {
+      'caja_chica': 'Caja Chica',
+      'caja_grande': 'Caja Grande',
+      'viaticos': 'Viáticos',
+      'proyectos_especiales': 'Proyectos Especiales',
+      'eventos': 'Eventos',
+      'mantenimiento': 'Mantenimiento',
+      'otros': 'Otros'
+    };
+    return tipos[tipo_fondo] || tipo_fondo;
   }
 
   // ===== GASTOS =====
